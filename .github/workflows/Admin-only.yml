@@ -24,7 +24,7 @@ jobs:
       - name: Prüfen ob Admin
         run: |
           echo "Nur Admins dürfen diesen Workflow triggern"
-          if [ "${{ github.actor }}" != "DeinAdminUserName" ]; then
+          if [ "${{ github.actor }}" != "GDayIT" ]; then
             echo "Nicht berechtigt!"
             exit 1
           fi
