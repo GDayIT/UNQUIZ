@@ -29,4 +29,5 @@ jobs:
             exit 1
           fi
       - name: Admin-Schritt
-        run: echo "Admin Workflow läuft..."
+        run: echo "Admin Workflow läuft auf ${{ matrix.os }}"
+        shell: bash
