@@ -1,10 +1,10 @@
-# 📘 QuizE
+# 📘 UNQUIZ
 It's a Game!
 
 
-## QuizE
+## UNQUIZ
 
-**** QuizE ist eine modulare Java-Anwendung zur Erstellung und Verwaltung von Quizfragen. Sie bietet eine intuitive grafische Benutzeroberfläche (GUI) und eine einfache Datenlogik zur Speicherung und Verarbeitung von Fragen.
+**** UNQUIZ ist eine modulare Java-Anwendung zur Erstellung und Verwaltung von Quizfragen. Sie bietet eine intuitive grafische Benutzeroberfläche (GUI) und eine einfache Datenlogik zur Speicherung und Verarbeitung von Fragen.
 
 ---
 
@@ -19,7 +19,7 @@ It's a Game!
 ## 🛠️ Projektstruktur
 
 ```plaintext
-ProtoQuizz/
+UNQUIZ/
 ├────────────src/
 │   ├── dbbl/
 │   │   ├── BusinesslogicalDelegation.java
@@ -107,7 +107,7 @@ ProtoQuizz/
 ### 📥 Projekt klonen
 
 ```bash
-git clone https://github.com/dein-nutzername/ProtoQuizz.git
+git clone https://github.com/dein-nutzername/UNQUIZ.git 
 
 🧩 In Eclipse importieren
 Öffne Eclipse.
