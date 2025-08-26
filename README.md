@@ -84,12 +84,12 @@ UNQUIZ/
 │   │
 │   └── module-info.java
 ├── bin/ (vom Tracking ausgeschlossen(Daher im .gitignore))
-├── .classpath
-├── .gitignore
+├── .classpath/
+├── .gitignore/
 ├── .project / .settings/
 ├── CODEOWNERS
 ├── LICENSE
-├── ProjektDocumentation
+├── ProjektDocumentation/ (Beinhaltet alle im laufe des Projekts Dokumentierten Inhalte(QL-UC-0-3 + Prj-UC-0-1, UML, Storyboards, Qualitätssicherung(Vollwertige und Umfängliche Tests), (Allgemeines zum Projekt, Projektmanagement, Status und Tage)
 ├── README.md
 └── SECURITY.md
 ```
