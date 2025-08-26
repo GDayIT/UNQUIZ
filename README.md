@@ -84,8 +84,9 @@ UNQUIZ/
 │   │
 │   └── module-info.java
 ├── bin/ (vom Tracking ausgeschlossen(Daher im .gitignore))
+├── .classpath
 ├── .gitignore
-├── .classpath / .project / .settings/
+├── .project / .settings/
 ├── CODEOWNERS
 ├── LICENSE
 ├── ProjektDocumentation
