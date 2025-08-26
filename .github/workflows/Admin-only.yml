@@ -1,0 +1,27 @@
+name: Admin-only Workflow
+
+on:
+  push:
+    branches:
+      - main   
+
+permissions:
+  contents: read    
+  id-token: none
+  issues: none
+  pull-requests: none
+  actions: write
+
+jobs:
+  check-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prüfen ob Admin
+        run: |
+          echo "Nur Admins dürfen diesen Workflow triggern"
+          if [ "${{ github.actor }}" != "DeinAdminUserName" ]; then
+            echo "Nicht berechtigt!"
+            exit 1
+          fi
+      - name: Admin-Schritt
+        run: echo "Admin Workflow läuft..."
