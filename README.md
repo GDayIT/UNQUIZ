@@ -184,6 +184,56 @@ Die grafische Oberfläche startet und du kannst Quizfragen erstellen und verwalt
 
 ```
 
+## 🧪 Tests
+
+Das Projekt enthält verschiedene Testebenen, um Stabilität und Funktionalität sicherzustellen. 
+Es wird **JUnit 5 (JUnit Jupiter)** für automatisierte Tests genutz.  
+Alle Tests liegen im Package: org.junit.jupiter.java
+Die zentrale Testklasse lautet: Test.java
+---
+
+### ✅ Testarten
+
+- **Unit Tests (Unittests)**  
+  Testen einzelne Klassen/Methoden isoliert.  
+  → Ziel: Korrektheit der kleinsten Funktionseinheiten (`Test.java` enthält Beispieltests).   
+
+- **Integration Tests**  
+  Überprüfen das Zusammenspiel mehrerer Module (z. B. GUI ↔ Logik ↔ Datenbank/Persistenz).  
+  → Ziel: Sicherstellen, dass Komponenten korrekt interagieren.  
+
+- **Functional Tests (Funktionstests)**  
+  Testen, ob die Anwendung die fachlichen Anforderungen erfüllt (z. B. Quiz starten, Karteikarten lernen).
+  → Beispiel: „Kann ein Quiz erstellt und gestartet werden?“  
+
+- **Smoke Tests**  
+  Kurze, oberflächliche Tests nach einem Build.  
+  → Ziel: Prüfen, ob die Anwendung grundsätzlich startet und keine kritischen Fehler enthält.  
+
+- **End-to-End Tests (E2E)**  
+  Simulieren den Ablauf aus Benutzersicht (z. B. Quiz starten, Fragen beantworten, Ergebnisse sehen).  
+  → Ziel: Sicherstellen, dass der gesamte Workflow wie erwartet funktioniert.  
+
+---
+
+### ▶️ Tests ausführen
+
+Falls du **JUnit 5** in Eclipse verwendest:
+
+1. Rechtsklick auf den `test`-Ordner oder eine Testklasse.  
+2. Wähle **Run As → JUnit Test**.  
+3. Ergebnisse werden in der **JUnit-View** angezeigt.
+4. Ergebnisse erscheinen in der **JUnit-Ansicht** (grün = bestanden, rot = fehlgeschlagen).  
+
+#### 🔹 Über die Konsole (Maven/Gradle):
+
+- **Maven**:
+  ```bash
+  mvn test
+  
+  ./gradlew test
+
+
 ---
 
 > ⚠️ Hinweis:  
