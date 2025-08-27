@@ -23,9 +23,6 @@ import java.util.stream.Stream;
 <<<<<<< HEAD
  * @author D.Georgiou
  * @version 1.0
-=======
- * @author Quiz Application Team
- * @version 2.0
 >>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public class ModularSortingService implements SortingDelegate, Serializable {
