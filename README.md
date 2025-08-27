@@ -15,27 +15,41 @@ What is it?!
 ---
 
 ## 🎯 Features
-- 🧠 **Quizfragen erstellen**: Benutzer können eigene Fragen mit Antwortmöglichkeiten definieren.
-- 🖼️ **Modulare GUI**: Panels zur Frageerstellung, Listenanzeige und Navigation.
-- 🗃️ **Business-Logik integriert**: Datenverarbeitung und Speicherung in einer Zwei-Tier-Architektur.
-- 📦 **Java Modularisierung**: Verwendung von `module-info.java` zur Strukturierung.
-- 📚 **Leitner-Lernsystem (Adaptive Learning)**:
-  - Integriertes **Adaptive Leitner System** zum wiederholten Lernen mit Karteikarten.  
-    - → Fragen wandern zwischen Stufen, abhängig davon, ob sie richtig oder falsch beantwortet wurden.  
-    - → Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.
-    - → Schwierigkeit anpassbar in den **Einstellungen**.
-- 📊 **Statistik & Fortschrittsanzeige**:
+- 🧠 **Quizfragen erstellen**  
+  Benutzer können eigene Fragen mit Antwortmöglichkeiten definieren.  
 
-   Umfangreiche Statistiken über Lernerfolge:  
+- 🖼️ **Modulare GUI**  
+  Panels zur Frageerstellung, Listenanzeige und Navigation.  
+
+- 🗃️ **Business-Logik integriert**  
+  Datenverarbeitung und Speicherung in einer Zwei-Tier-Architektur.  
+
+- 📦 **Java Modularisierung**  
+  Verwendung von `module-info.java` zur sauberen Strukturierung.  
+  - Umsetzung durch **Delegation** und **Lambda-Zuweisungen**, um Logik klar voneinander zu trennen.  
+  - Klassen greifen über Delegations-Interfaces auf Services zu → fördert Testbarkeit und Erweiterbarkeit.  
+
+- 📚 **Leitner-Lernsystem (Adaptive Learning)**  
+  - Integriertes **Adaptive Leitner System** zum wiederholten Lernen mit Karteikarten.  
+  - Fragen wandern zwischen Stufen, abhängig von richtigen oder falschen Antworten.  
+  - Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.  
+  - Schwierigkeit kann in den **Einstellungen** angepasst werden.  
+
+- 📊 **Statistik & Fortschrittsanzeige**  
+  Umfangreiche Statistiken über Lernerfolge:  
   - Anzahl beantworteter Fragen  
   - Richtig/Falsch-Quoten  
   - Lernfortschritt pro Thema  
   - Übersicht über Leitner-Stufen   
-- 🖥️ **Benutzerfreundliche Oberfläche (Swing GUI)**: Eine modulare Benutzeroberfläche mit klar strukturierten Panels für Quiz, Statistiken und Einstellungen.  
-- 🎮 **Anpassbare Spielmodi**: Verschiedene Quiz-Modi, inkl. Zeitlimit, Filter nach Themen oder Schwierigkeitsgrad.  
 
+- 🖥️ **Benutzerfreundliche Oberfläche (Swing GUI)**  
+  Eine Modulare Benutzeroberflächen mit klar strukturierten Panels für Quiz, Statistiken und Einstellungen. 
+
+- 🎮 **Anpassbare Spielmodi**  
+  Verschiedene Quiz-Modi, inkl. Filter nach Themen oder Schwierigkeitsgrad.  
 
 ---
+
 
 ## 🛠️ Projektstruktur
 
