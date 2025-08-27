@@ -25,7 +25,7 @@ What is it?!
                                                    → Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.
                                                    → Schwierigkeit anpassbar in den **Einstellungen**.
 - 📊 **Statistik & Fortschrittsanzeige**: 
-  Umfangreiche Statistiken über Lernerfolge:  
+  - Umfangreiche Statistiken über Lernerfolge:  
   - Anzahl beantworteter Fragen  
   - Richtig/Falsch-Quoten  
   - Lernfortschritt pro Thema  
