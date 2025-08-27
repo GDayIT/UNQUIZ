@@ -19,7 +19,8 @@ What is it?!
 - 🖼️ **Modulare GUI**: Panels zur Frageerstellung, Listenanzeige und Navigation.
 - 🗃️ **Business-Logik integriert**: Datenverarbeitung und Speicherung in einer Zwei-Tier-Architektur.
 - 📦 **Java Modularisierung**: Verwendung von `module-info.java` zur Strukturierung.
-- 📚 **Leitner-Lernsystem (Adaptive Learning)**: Integriertes **Adaptive Leitner System** zum wiederholten Lernen mit Karteikarten.  
+- 📚 **Leitner-Lernsystem (Adaptive Learning)**:
+- Integriertes **Adaptive Leitner System** zum wiederholten Lernen mit Karteikarten.  
                                                    → Fragen wandern zwischen Stufen, abhängig davon, ob sie richtig oder falsch beantwortet wurden.  
                                                    → Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.
                                                    → Schwierigkeit anpassbar in den **Einstellungen**.
