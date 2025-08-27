@@ -24,8 +24,9 @@ What is it?!
                                                    → Fragen wandern zwischen Stufen, abhängig davon, ob sie richtig oder falsch beantwortet wurden.  
                                                    → Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.
                                                    → Schwierigkeit anpassbar in den **Einstellungen**.
-- 📊 **Statistik & Fortschrittsanzeige**: 
-  - Umfangreiche Statistiken über Lernerfolge:  
+- 📊 **Statistik & Fortschrittsanzeige**:
+-
+ Umfangreiche Statistiken über Lernerfolge:  
   - Anzahl beantworteter Fragen  
   - Richtig/Falsch-Quoten  
   - Lernfortschritt pro Thema  
