@@ -134,7 +134,7 @@ UNQUIZ/
 
 ```bash
 git clone https://github.com/dein-nutzername/UNQUIZ.git
-
+```
 > ⚠️ Hinweis:
 > Dieses Projekt benötigt **Java JDK 24** und Eclipse als Entwicklungsumgebung.
 >
@@ -165,10 +165,11 @@ git clone https://github.com/dein-nutzername/UNQUIZ.git
 > 4. Prüfe die Installation:
 >    ```bash
 >    java -version
->
+>    ```
 > Die Entwicklungsumgebung steht für Linux, macOS, Windows zuverfügung.
 
 ### Danach falls nicht schon vorhande!
+```bash
 
 🧩 In Eclipse importieren
 Öffne Eclipse.
