@@ -10,7 +10,7 @@ What is it?!
 
 ## UNQUIZ
 
-***** UNQUIZ ist eine modulare Java-Anwendung zur Erstellung und Verwaltung von Quizfragen. Sie bietet eine intuitive grafische Benutzeroberfläche (GUI) und eine einfache Datenlogik zur Speicherung und Verarbeitung von Fragen.
+***** UNQUIZ ist eine modulare Java-Anwendung zur Erstellung und Verwaltung von Quizfragen. Sie bietet eine intuitive grafische Benutzeroberfläche (GUI) und eine einfache Datenlogik zur Speicherung und Verarbeitung von Fragen. Die Statistik hilft dir den überblick über deine erfolge zu erhalten. 
 
 ---
 
@@ -19,6 +19,19 @@ What is it?!
 - 🖼️ **Modulare GUI**: Panels zur Frageerstellung, Listenanzeige und Navigation.
 - 🗃️ **Business-Logik integriert**: Datenverarbeitung und Speicherung in einer Zwei-Tier-Architektur.
 - 📦 **Java Modularisierung**: Verwendung von `module-info.java` zur Strukturierung.
+- 📚 **Leitner-Lernsystem (Adaptive Learning)**: Integriertes **Adaptive Leitner System** zum wiederholten Lernen mit Karteikarten.  
+                                                   → Fragen wandern zwischen Stufen, abhängig davon, ob sie richtig oder falsch beantwortet wurden.  
+                                                   → Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.
+                                                   → Schwierigkeit anpassbar in den **Einstellungen**.
+- 📊 **Statistik & Fortschrittsanzeige**: 
+  Umfangreiche Statistiken über Lernerfolge:  
+  - Anzahl beantworteter Fragen  
+  - Richtig/Falsch-Quoten  
+  - Lernfortschritt pro Thema  
+  - Übersicht über Leitner-Stufen   
+- 🖥️ **Benutzerfreundliche Oberfläche (Swing GUI)**: Eine modulare Benutzeroberfläche mit klar strukturierten Panels für Quiz, Statistiken und Einstellungen.  
+- 🎮 **Anpassbare Spielmodi**: Verschiedene Quiz-Modi, inkl. Zeitlimit, Filter nach Themen oder Schwierigkeitsgrad.  
+
 
 ---
 
