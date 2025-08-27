@@ -31,6 +31,6 @@ Wenn du eine Sicherheitslücke in ProtoQuizz entdeckst, folge bitte diesen Schri
 
 ## 🔒 Verantwortungsvolles Offenlegen
 
-Bitte gib uns ausreichend Zeit, die Schwachstelle zu beheben, bevor du sie öffentlich machst. Wir schätzen deine Hilfe zur Verbesserung der Sicherheit von ProtoQuizz!
+Bitte gib uns ausreichend Zeit, die Schwachstelle zu beheben, bevor du sie öffentlich machst. Wir schätzen deine Hilfe zur Verbesserung der Sicherheit von UNQUIZ!
 
 
