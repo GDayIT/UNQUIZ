@@ -16,8 +16,6 @@ import java.util.function.*;
  * 
 <<<<<<< HEAD
  * @author D.Georgiou
-=======
- * @author Quiz Application Team
 >>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  * @version 1.0
  */
