@@ -189,7 +189,7 @@ git clone https://github.com/dein-nutzername/UNQUIZ.git
 Öffne Eclipse.
 Gehe zu File → Import....
 Wähle Existing Projects into Workspace.
-Wähle den geklonten Ordner ProtoQuizz.
+Wähle den geklonten Ordner UNQUIZ.
 Bestätige mit Finish.
 ▶️ Starten
 Öffne die Datei Frame.java im Paket gui.
