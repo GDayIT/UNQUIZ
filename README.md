@@ -278,7 +278,7 @@ Ich rfeue mich über Beiträge in folgenden Bereichen:
 Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
 
 **D.Georgiou**  
-📧 GitHub-Profil  
+📧 GitHub-Profil: GDayIT
 📧 optional: email.bla@fake.de
 
 
