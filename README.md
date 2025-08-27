@@ -204,6 +204,7 @@ Das Projekt enthält verschiedene Testebenen, um Stabilität und Funktionalität
 Es wird **JUnit 5 (JUnit Jupiter)** für automatisierte Tests genutz.  
 Alle Tests liegen im Package: org.junit.jupiter.java
 Die zentrale Testklasse lautet: Test.java
+
 ---
 
 ### ✅ Testarten
