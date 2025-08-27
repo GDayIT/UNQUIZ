@@ -133,7 +133,42 @@ UNQUIZ/
 ### 📥 Projekt klonen
 
 ```bash
-git clone https://github.com/dein-nutzername/UNQUIZ.git 
+git clone https://github.com/dein-nutzername/UNQUIZ.git
+
+> ⚠️ Hinweis:
+> Dieses Projekt benötigt **Java JDK 24** und Eclipse als Entwicklungsumgebung.
+>
+> ## Voraussetzungen
+>
+> - [Eclipse IDE](https://www.eclipse.org/downloads/) (mind. Version 2024-xx oder neuer)
+> - [JDK 24](https://jdk.java.net/24/) (offizielle OpenJDK-Builds)
+>
+> ## Installation JDK 24
+>
+> 1. Lade das JDK 24 passend zu deinem Betriebssystem herunter:  
+>    👉 [https://jdk.java.net/24/](https://jdk.java.net/24/)
+>
+> 2. Entpacke die heruntergeladene Datei (z. B. nach `C:\java\jdk-24` oder `/usr/lib/jvm/jdk-24`).
+>
+> 3. Setze die Umgebungsvariable `JAVA_HOME`:  
+>    - **Windows (PowerShell)**:
+>      ```powershell
+>      setx JAVA_HOME "C:\java\jdk-24"
+>      setx PATH "%JAVA_HOME%\bin;%PATH%"
+>      ```
+>    - **Linux / macOS (bash/zsh)**:
+>      ```bash
+>      export JAVA_HOME=/usr/lib/jvm/jdk-24
+>      export PATH=$JAVA_HOME/bin:$PATH
+>      ```
+> 
+> 4. Prüfe die Installation:
+>    ```bash
+>    java -version
+>
+> Die Entwicklungsumgebung steht für Linux, macOS, Windows zuverfügung.
+
+### Danach falls nicht schon vorhande!
 
 🧩 In Eclipse importieren
 Öffne Eclipse.
@@ -153,6 +188,7 @@ Die grafische Oberfläche startet und du kannst Quizfragen erstellen und verwalt
 > ⚠️ Hinweis:  
 > Die aktuelle Version basiert auf Java und wird über die Entwicklungsumgebung gestartet.  
 > In einer zukünftigen Version wird eine ausführbare `.exe`-Datei verfügbar sein, die alle Funktionen als eigenständige Windows-Anwendung bereitstellt – ohne zusätzliche Installation von Java oder IDE.
+> 
 
 ---
 
