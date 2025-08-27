@@ -22,8 +22,7 @@ What is it?!
 - 📚 **Leitner-Lernsystem (Adaptive Learning)**:
   - Integriertes **Adaptive Leitner System** zum wiederholten Lernen mit Karteikarten.  
                                                    → Fragen wandern zwischen Stufen, abhängig davon, ob sie richtig oder falsch beantwortet wurden.  
-                                                   → Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.
-                                                   → Schwierigkeit anpassbar in den **Einstellungen**.
+                                                   → Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.                                                                                              → Schwierigkeit anpassbar in den **Einstellungen**.
 - 📊 **Statistik & Fortschrittsanzeige**:
 
    Umfangreiche Statistiken über Lernerfolge:  
