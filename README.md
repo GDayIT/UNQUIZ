@@ -36,18 +36,18 @@ What is it?!
   - Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.  
   - Schwierigkeit kann in den **Einstellungen** angepasst werden.
   -  📦 Boxenstruktur & Intervalle (dynamisch anpassbar)
-      
-      | Box | Zustand          | Wiederholungsintervall | Lernziel                         |
-      |-----|------------------|-------------------------|----------------------------------|
-      | 1   | Neu / Falsch     | 1 Tag                  | Erste Festigung                  |
-      | 2   | Unsicher         | 2–3 Tage               | Wiederholung mit Feedback        |
-      | 3   | Teilweise sicher | 5–6 Tage               | Konsolidierung                   |
-      | 4   | Sicher           | 10–12 Tage             | Automatisierung                  |
-      | 5   | Sehr sicher      | 20–25 Tage             | Langzeitgedächtnis               |
-      | 6   | Mastered         | 40–60 Tage             | Erhalt & Transfer                |
-      
-      👉 Durch Aktivieren des **Leitner-Modus** werden die Inhalte automatisch nach dem **NeroLeitner-System** angepasst und spielbar gemacht – entweder für ein ausgewähltes Thema oder für alle Themen.
- 
+                
+                | Box | Zustand          | Wiederholungsintervall | Lernziel                         |
+                |-----|------------------|-------------------------|----------------------------------|
+                | 1   | Neu / Falsch     | 1 Tag                  | Erste Festigung                  |
+                | 2   | Unsicher         | 2–3 Tage               | Wiederholung mit Feedback        |
+                | 3   | Teilweise sicher | 5–6 Tage               | Konsolidierung                   |
+                | 4   | Sicher           | 10–12 Tage             | Automatisierung                  |
+                | 5   | Sehr sicher      | 20–25 Tage             | Langzeitgedächtnis               |
+                | 6   | Mastered         | 40–60 Tage             | Erhalt & Transfer                |
+                
+                👉 Durch Aktivieren des **Leitner-Modus** werden die Inhalte automatisch nach dem **NeroLeitner-System** angepasst und spielbar gemacht – entweder für ein ausgewähltes Thema oder für alle Themen.
+           
 
 - 📊 **Statistik & Fortschrittsanzeige**  
   Umfangreiche Statistiken über Lernerfolge:  
