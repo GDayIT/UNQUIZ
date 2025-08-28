@@ -289,15 +289,17 @@ Ich rfeue mich über Beiträge in folgenden Bereichen:
 - Dokumentation und Beispiele
 
 ---
-
+---
 ## 📬 Kontakt
 
 Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
 
 **D.Georgiou**  
 📧 GitHub-Profil: GDayIT
+---
 📧 optional: email.bla@fake.de
-
+---
+---
 
 
 
