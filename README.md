@@ -259,7 +259,8 @@ Falls du **JUnit 5** in Eclipse verwendest:
   ```bash
   mvn test
 ---
-  - **Gradle**:
+/
+- **Gradle**:
   ```bash
   ./gradlew test
 ---
