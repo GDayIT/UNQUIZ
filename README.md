@@ -34,8 +34,8 @@ What is it?!
   - Das Leitner System wurde von mir angepasst, sodass es sich nach modernen neuropsychologischen und lernpsychologischen Konzepten richtet.
   - Fragen wandern zwischen Stufen, abhängig von richtigen oder falschen Antworten.  
   - Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.  
-  - Schwierigkeit kann in den **Einstellungen** angepasst werden.
-  -  📦 Boxenstruktur & Intervalle (dynamisch anpassbar)
+  - Schwierigkeit kann in den **Einstellungen** angepasst werden (dynamisch anpassbar in drei stufen).
+  -  📦 Boxenstruktur & Intervalle
                 
             
             | Box | Zustand          | Wiederholungsintervall | Lernziel                         |
