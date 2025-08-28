@@ -29,11 +29,26 @@ What is it?!
   - Umsetzung durch **Delegation** und **Lambda-Zuweisungen**, um Logik klar voneinander zu trennen.  
   - Klassen greifen über Delegations-Interfaces auf Services zu → fördert Testbarkeit und Erweiterbarkeit.  
 
-- 📚 **Leitner-Lernsystem (Adaptive Learning)**  
-  - Integriertes **Adaptive Leitner System** zum wiederholten Lernen mit Karteikarten.  
+- 📚 **Leitner-Lernsystem (Adaptive Learning(NeroLeitner)**  
+  - Integriertes **Adaptive Leitner System/NeroLeitner** zum wiederholten Lernen mit Karteikarten.
+  - Das Leitner System wurde von mir angepasst, sodass es sich nach modernen neuropsychologischen und lernpsychologischen Konzepten richtet.
   - Fragen wandern zwischen Stufen, abhängig von richtigen oder falschen Antworten.  
   - Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.  
-  - Schwierigkeit kann in den **Einstellungen** angepasst werden.  
+  - Schwierigkeit kann in den **Einstellungen** angepasst werden.
+ 
+### 📦 Boxenstruktur & Intervalle (dynamisch anpassbar)
+
+| Box | Zustand          | Wiederholungsintervall | Lernziel                         |
+|-----|------------------|-------------------------|----------------------------------|
+| 1   | Neu / Falsch     | 1 Tag                  | Erste Festigung                  |
+| 2   | Unsicher         | 2–3 Tage               | Wiederholung mit Feedback        |
+| 3   | Teilweise sicher | 5–6 Tage               | Konsolidierung                   |
+| 4   | Sicher           | 10–12 Tage             | Automatisierung                  |
+| 5   | Sehr sicher      | 20–25 Tage             | Langzeitgedächtnis               |
+| 6   | Mastered         | 40–60 Tage             | Erhalt & Transfer                |
+
+👉 Durch Aktivieren des **Leitner-Modus** werden die Inhalte automatisch nach dem **NeroLeitner-System** angepasst und spielbar gemacht – entweder für ein ausgewähltes Thema oder für alle Themen.
+ 
 
 - 📊 **Statistik & Fortschrittsanzeige**  
   Umfangreiche Statistiken über Lernerfolge:  
