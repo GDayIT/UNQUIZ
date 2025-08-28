@@ -36,6 +36,7 @@ What is it?!
   - Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.  
   - Schwierigkeit kann in den **Einstellungen** angepasst werden (dynamisch anpassbar in drei Stufen).
   -  📦 Boxenstruktur & Intervalle
+    
           | Box | Zustand          | Wiederholungsintervall | Lernziel                         |
           |-----|------------------|-------------------------|----------------------------------|
           | 1   | Neu / Falsch     | 1 Tag                  | Erste Festigung                  |
