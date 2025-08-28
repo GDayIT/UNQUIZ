@@ -264,7 +264,7 @@ Falls du **JUnit 5** in Eclipse verwendest:
   ./gradlew test
 ---
 
----bash
+
 
 > ⚠️ Hinweis:  
 > Die aktuelle Version basiert auf Java und wird über die Entwicklungsumgebung gestartet.  
