@@ -35,8 +35,7 @@ What is it?!
   - Fragen wandern zwischen Stufen, abhängig von richtigen oder falschen Antworten.  
   - Unterstützt langfristiges Lernen durch Wiederholung in optimalen Intervallen.  
   - Schwierigkeit kann in den **Einstellungen** angepasst werden.
- 
-### 📦 Boxenstruktur & Intervalle (dynamisch anpassbar)
+  -  📦 Boxenstruktur & Intervalle (dynamisch anpassbar)
 
 | Box | Zustand          | Wiederholungsintervall | Lernziel                         |
 |-----|------------------|-------------------------|----------------------------------|
