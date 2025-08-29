@@ -86,7 +86,9 @@ UNQUIZ/
 ├──────────── .github/workflows/
 │                       ├── blocking_excel_change.yml
 │                       └── Admin-only.yml
+│ 
 ├── ProjektDocumentation/Projektmanagement/Storyboards/Use Cases/Klassendiagramm(ERD)/Qualitätssicherung(Beinhaltet alle Projekt Dokumente(QL-UC-0-3 + Prj-UC-0-1, UML, Storyboards, Qualitätssicherung(Vollwertige und Umfängliche Tests),(Allgemeines zum Projekt, Projektmanagement, Status und Tage)))
+│ 
 ├──────────── src/
 │   ├── dbbl/
 │   │   ├── BusinesslogicalDelegation.java
@@ -479,4 +481,5 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
 **D.Georgiou**  
 📧 GitHub-Profil  
 📧 optional: email.bla@fake.de
+
 
