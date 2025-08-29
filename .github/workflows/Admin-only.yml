@@ -1,0 +1,50 @@
+name: Admin-only Cross-Platform Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+  id-token: none
+  pull-requests: none
+  actions: write
+
+jobs:
+  check-admin:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Prüfen ob Admin (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_ACTOR -ne "GDayIT") {
+              Write-Host "Nicht berechtigt!"
+              exit 1
+          } else {
+              Write-Host "Admin Workflow läuft"
+          }
+
+      - name: Prüfen ob Admin (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "${{ github.actor }}" != "GDayIT" ]; then
+            echo "Nicht berechtigt!"
+            exit 1
+          else
+            echo "Admin Workflow läuft"
+          fi
+
+      - name: Admin Schritt
+        shell: bash
+        run: echo "Admin Workflow läuft auf ${{ matrix.os }}"
