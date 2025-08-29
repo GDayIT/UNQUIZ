@@ -7,6 +7,21 @@ What is it?!
 >
 >It's UNQUIZ!
 
+---
+
+
+## Worin sich mein Code Auszeichnet?!
+
+1.
+- 🧩**Modulare Architektur**
+2.
+- 📊**Datengetriebene Features**
+3.
+- 🎯**Klare Verantwortlichkeiten**
+4.
+- 🚀**Potenzial für Erweiterungen**
+
+---
 
 ## UNQUIZ
 
@@ -140,10 +155,12 @@ UNQUIZ/
 ├── .gitignore/
 ├── .project / .settings/
 ├── CODEOWNERS
+├── DatabankStruc.txt
 ├── LICENSE
 ├── ProjektDocumentation/ (Beinhaltet alle im laufe des Projekts Dokumentierten Inhalte(QL-UC-0-3 + Prj-UC-0-1, UML, Storyboards, Qualitätssicherung(Vollwertige und Umfängliche Tests), (Allgemeines zum Projekt, Projektmanagement, Status und Tage)
 ├── README.md
-└── SECURITY.md
+├── SECURITY.md
+└── quiz_questions.dat
 ```
 
 ---
