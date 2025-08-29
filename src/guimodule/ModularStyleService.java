@@ -7,57 +7,110 @@ import javax.swing.*;
 import javax.swing.border.*;
 
 /**
- * Modular styling service implementing complete UI styling with persistence and delegation.
+ * ModularStyleService is a centralized, modular, and highly configurable styling service for
+ * Swing-based GUI components. It provides complete UI styling, theme management, persistent
+ * configuration, and functional composition for dynamic UI updates.
  * 
- * This service provides:
- * - Lambda-based styling operations for all UI components
- * - Persistent style configurations with serialization
- * - Theme switching with delegation patterns
- * - Dynamic styling based on application state
- * - Functional composition for complex styling operations
+ * <p>This service supports the following features:</p>
+ * <ul>
+ *   <li>Lambda-based styling operations for buttons, panels, fonts, borders, and layouts.</li>
+ *   <li>Persistence of style configurations using serialization for application sessions.</li>
+ *   <li>Dynamic theme switching with validation and delegation.</li>
+ *   <li>Functional composition to combine multiple styling operations.</li>
+ *   <li>Integration with color schemes, spacing, and component states.</li>
+ * </ul>
  * 
- * All styling operations are implemented as pure functions or controlled side-effects.
+ * <p>Typical usage involves creating buttons or panels via lambda-based factory functions,
+ * applying themes, and persisting or restoring style configurations.</p>
  * 
-<<<<<<< HEAD
- * @author D.Georgiou
- * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
+ * <p>This service integrates with application sessions, adaptive Leitner cards, questions,
+ * and quiz themes indirectly via its styling configuration.</p>
+ * 
+ * <p>Author: D.Georgiou</p>
+ * <p>Version: 1.0</p>
  */
 public class ModularStyleService implements StyleDelegate, Serializable {
+
+    /** Serialization ID for backward compatibility. */
     private static final long serialVersionUID = 1L;
+
+    /** Default file used to persist style configuration across sessions. */
     private static final String STYLE_CONFIG_FILE = "style_config.dat";
-    
+
+    // === CORE STATE FIELDS ===
+
+    /** Current style configuration applied to the application. */
     private StyleConfiguration currentConfig;
+
+    /** Current theme applied to the application, including color schemes, fonts, and layouts. */
     private ApplicationTheme currentTheme;
+
+    // === LAMBDA IMPLEMENTATION FIELDS ===
     
-    // === LAMBDA IMPLEMENTATIONS ===
+    /** Lambda to create a styled JButton with default configuration. */
     private Function<String, JButton> createStyledButtonImpl;
+
+    /** Lambda to apply a ButtonTheme to a given JButton. */
     private BiFunction<JButton, ButtonTheme, JButton> applyButtonThemeImpl;
+
+    /** Lambda to get a ButtonStyle depending on the button state (hover, pressed, disabled). */
     private Function<ButtonState, ButtonStyle> getButtonStyleImpl;
+
+    /** Lambda to create a styled JPanel with default configuration. */
     private Function<PanelType, JPanel> createStyledPanelImpl;
+
+    /** Lambda to apply a PanelTheme to a JPanel instance. */
     private BiFunction<JPanel, PanelTheme, JPanel> applyPanelThemeImpl;
+
+    /** Lambda to create styled borders based on predefined types. */
     private Function<BorderType, Border> createStyledBorderImpl;
+
+    /** Lambda to apply a color scheme to component styles. */
     private Function<ColorScheme, ColorConfiguration> applyColorSchemeImpl;
+
+    /** Lambda to calculate dynamic component colors based on state. */
     private Function<ComponentState, Color> calculateColorImpl;
+
+    /** Lambda to create a styled Font from a FontSpec object. */
     private Function<FontSpec, Font> createStyledFontImpl;
+
+    /** Lambda to create a font scaler function for dynamic resizing. */
     private Function<Float, UnaryOperator<Font>> createFontScalerImpl;
+
+    /** Lambda to create a styled layout manager for panels. */
     private Function<LayoutType, LayoutManager> createStyledLayoutImpl;
+
+    /** Lambda to retrieve spacing configurations for layout padding/margins. */
     private Function<SpacingType, SpacingConfiguration> getSpacingImpl;
+
+    /** Lambda to save a StyleConfiguration to persistent storage. */
     private Consumer<StyleConfiguration> saveStyleConfigurationImpl;
+
+    /** Lambda to load a StyleConfiguration from persistent storage. */
     private Supplier<StyleConfiguration> loadStyleConfigurationImpl;
+
+    /** Lambda to apply an ApplicationTheme including colors, fonts, and layouts. */
     private Consumer<ApplicationTheme> applyApplicationThemeImpl;
+
+    /** Lambda to validate if a given ApplicationTheme is structurally correct. */
     private Predicate<ApplicationTheme> validateThemeImpl;
-    
+
+    // === CONSTRUCTORS ===
+
     /**
-     * Creates a new modular styling service with lambda-based implementations.
+     * Default constructor initializes lambda implementations and loads existing configuration
+     * or creates a default configuration.
      */
     public ModularStyleService() {
         initializeLambdas();
         loadOrCreateDefaultConfiguration();
     }
-    
+
+    // === LAMBDA INITIALIZATION ===
+
     /**
-     * Initializes all lambda implementations for styling operations.
+     * Initializes all lambda-based styling operations, including buttons, panels, fonts,
+     * layouts, borders, colors, and persistence.
      */
     private void initializeLambdas() {
         

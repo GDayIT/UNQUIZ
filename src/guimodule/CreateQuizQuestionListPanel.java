@@ -14,12 +14,6 @@ import javax.swing.*;
 
 /**
  * Topic selector and question titles list using pure delegation and callbacks.
-<<<<<<< HEAD
- * 
- * @author D.Georgiou
- * @version 1.0
-=======
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public class CreateQuizQuestionListPanel extends JPanel implements Serializable {
     private static final long serialVersionUID = 1L;

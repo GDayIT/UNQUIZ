@@ -11,114 +11,306 @@ import java.util.stream.Collectors;
 import javax.swing.*;
 
 /**
- * Enhanced Statistics Panel with integrated statistics service.
+ * <h2>ModularStatisticsPanel</h2>
+ * <p>
+ * Swing-based statistics dashboard that integrates tightly with the quiz runtime to
+ * collect, persist, and visualize performance data. The panel aggregates outcomes
+ * from {@link ModularQuizPlay.QuizResult} events, maintains per-question and
+ * per-theme statistics, and coordinates with an adaptive Leitner system to support
+ * spaced repetition workflows (i.e., "flashcards" / "Karteikarten").
+ * </p>
  *
- * Features:
- * - Integrated ModularQuizStatistics functionality
- * - Real-time theme updates from delegate
- * - Automatic data synchronization
- * - Persistent statistics storage
- * - Karteikarten-System (Spaced Repetition)
+ * <h3>Key responsibilities</h3>
+ * <ul>
+ *   <li><b>Persistence</b>: transparent loading/saving of statistics to {@value #STATISTICS_FILE}.</li>
+ *   <li><b>Aggregation</b>: computes totals, success rates, and distribution of Leitner levels.</li>
+ *   <li><b>Integration</b>:
+ *     <ul>
+ *       <li>Receives quiz <i>sessions</i> via {@link #recordAnswer(ModularQuizPlay.QuizResult)}.</li>
+ *       <li>Updates <i>questions</i>/<i>themes</i> metrics and Leitner <i>cards</i> levels.</li>
+ *       <li>Can pull available <i>themes</i> from {@link BusinesslogicaDelegation} (directly or via {@link GuiModuleDelegate}).</li>
+ *     </ul>
+ *   </li>
+ *   <li><b>UI</b>: offers summary counters, theme selector, (placeholder) charts, and reset actions.</li>
+ * </ul>
  *
-<<<<<<< HEAD
+ * <h3>Threading model</h3>
+ * <ul>
+ *   <li>Long-running I/O (load/save) is offloaded to background threads.</li>
+ *   <li>UI updates are marshalled onto the EDT via {@link SwingUtilities#invokeLater(Runnable)}.</li>
+ *   <li>In-memory maps use {@link ConcurrentHashMap} for safe concurrent access.</li>
+ * </ul>
+ *
+ * <h3>Data model</h3>
+ * <ul>
+ *   <li>{@link QuestionStatistics}: per-question counters, success rate, and Leitner level (1=green … 6=red).</li>
+ *   <li>{@link ThemeStatistics}: per-theme counters and last-played timestamp.</li>
+ *   <li>Results stream: append-only list of {@link ModularQuizPlay.QuizResult} representing session answers.</li>
+ * </ul>
+ *
+ * <h3>Spaced repetition (Leitner)</h3>
+ * <ul>
+ *   <li>Correct answers increase <code>consecutiveCorrect</code>; multiple in a row can improve the card level.</li>
+ *   <li>Wrong answers increase <code>consecutiveWrong</code>; multiple in a row can worsen the level.</li>
+ *   <li>Levels progress between 1 (mastered) and 6 (needs work), informing practice priority.</li>
+ * </ul>
+ *
+ * <h3>Persistence compatibility</h3>
+ * <ul>
+ *   <li>Primary on-disk format: {@link StatisticsData} (lightweight DTO).</li>
+ *   <li>Backward compatibility: supports legacy panel serialization.</li>
+ * </ul>
+ *
+ * <p><b>Note:</b> This class intentionally focuses on collection/aggregation and UI scaffolding.
+ * Chart components are represented as {@link JPanel} placeholders; rendering is delegated externally.</p>
+ *
  * @author D.Georgiou
  * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public class ModularStatisticsPanel extends JPanel implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    /** Default persistence file for all statistics snapshots. */
     private static final String STATISTICS_FILE = "quiz_statistics.dat";
 
-    // UI Components
+    // =============================
+    // UI COMPONENTS (VIEW LAYER)
+    // =============================
+
+    /** Theme filter for aggregations; populated from the delegate when available. */
     private final JComboBox<String> themeSelector = new JComboBox<>();
+
+    /** Triggers manual refresh of aggregates and charts. */
     private final JButton refreshBtn = new JButton("🔄 Aktualisieren");
+
+    /** Deletes all persisted statistics and resets in-memory state. */
     private final JButton resetBtn = new JButton("🗑️ Reset Statistiken");
+
+    /** Textual area for human-readable statistics preview/log. */
     private final JTextArea statisticsArea = new JTextArea();
 
-    // Chart Components
+    // ---------- Chart scaffolding (panels as placeholders; rendering is external) ----------
+
+    /** Container for all charts laid out within the panel. */
     private JPanel chartsPanel;
+
+    /** Success-rate over time/overall (placeholder panel). */
     private JPanel successRateChart;
+
+    /** Comparison chart across themes (placeholder panel). */
     private JPanel themeComparisonChart;
+
+    /** Distribution of Leitner levels (placeholder panel). */
     private JPanel karteikartenChart;
 
-    // Metric cards
+    // ---------- KPI cards (top-line metrics) ----------
+
+    /** Total number of tracked (distinct) questions. */
     private JLabel totalQuestionsValue = new JLabel("0");
+
+    /** Total number of correct answers across all sessions. */
     private JLabel correctAnswersValue = new JLabel("0");
+
+    /** Total number of wrong answers across all sessions. */
     private JLabel wrongAnswersValue = new JLabel("0");
+
+    /** Average success rate across questions (0–100%). */
     private JLabel successRateValue = new JLabel("0%");
+
+    /** Average answer time; presentation-owned formatting (e.g., "0s"). */
     private JLabel avgTimeValue = new JLabel("0s");
+
+    /** Number of active themes observed in the data set. */
     private JLabel activeThemesValue = new JLabel("0");
 
-    // Integrated Statistics Service
-    private final Map<String, QuestionStatistics> questionStats = new ConcurrentHashMap<>();
-    private final Map<String, ThemeStatistics> themeStats = new ConcurrentHashMap<>();
-    private final List<ModularQuizPlay.QuizResult> allResults = new ArrayList<>();
-
-    // Adaptive Leitner System Integration
-    private AdaptiveLeitnerSystem leitnerSystem;
-    private String selectedTheme = "Alle Themen";
-
-    // Business Logic Delegate for real-time theme updates
-    private BusinesslogicaDelegation delegate;
-    // Gui module delegate (preferred)
-    private GuiModuleDelegate modules;
-
-    // Lambda-based operations
-    private Function<String, QuestionStatistics> getQuestionStats;
-    private Function<String, ThemeStatistics> getThemeStats;
-    private Consumer<ModularQuizPlay.QuizResult> recordAnswerImpl;
+    // =============================
+    // MODEL / STATE (DATA LAYER)
+    // =============================
 
     /**
-     * Statistics for individual questions.
+     * Aggregated statistics per question.
+     * Keyed by immutable question title (assumed unique in repository scope).
+     * Thread-safe for concurrent updates.
+     */
+    private final Map<String, QuestionStatistics> questionStats = new ConcurrentHashMap<>();
+
+    /**
+     * Aggregated statistics per theme.
+     * Keyed by theme name; updated on each recorded answer.
+     */
+    private final Map<String, ThemeStatistics> themeStats = new ConcurrentHashMap<>();
+
+    /**
+     * Append-only ledger of atomic outcomes (one per answered question).
+     * Serves as the canonical session history stream.
+     */
+    private final List<ModularQuizPlay.QuizResult> allResults = new ArrayList<>();
+
+    // =============================
+    // INTEGRATIONS
+    // =============================
+
+    /**
+     * Optional adaptive Leitner engine. When present, it is notified after each
+     * recorded answer so it can update card scheduling state.
+     */
+    private AdaptiveLeitnerSystem leitnerSystem;
+
+    /**
+     * UI/theme filter state; "Alle Themen" selects cross-theme aggregates.
+     */
+    private String selectedTheme = "Alle Themen";
+
+    /**
+     * Direct business logic delegate (legacy/compat mode) for fetching live themes.
+     * Prefer {@link #modules} for decoupled composition.
+     */
+    private BusinesslogicaDelegation delegate;
+
+    /**
+     * Composition root delegate that supplies business services (preferred).
+     * When present, used to retrieve {@link #delegate} and {@link #leitnerSystem}.
+     */
+    private GuiModuleDelegate modules;
+
+    // =============================
+    // FUNCTIONAL / LAMBDA HOOKS
+    // =============================
+
+    /**
+     * Supplier/loader for creating or retrieving a {@link QuestionStatistics}
+     * record for the given question title.
+     */
+    private Function<String, QuestionStatistics> getQuestionStats;
+
+    /**
+     * Supplier/loader for creating or retrieving a {@link ThemeStatistics}
+     * record for the given theme name.
+     */
+    private Function<String, ThemeStatistics> getThemeStats;
+
+    /**
+     * Core write-path for recording a single quiz outcome into all aggregates
+     * and persistence. Also updates Leitner levels according to consecutive
+     * answer streaks (per spaced-repetition rules).
+     */
+    private Consumer<ModularQuizPlay.QuizResult> recordAnswerImpl;
+
+    // =============================
+    // INNER DATA CLASSES
+    // =============================
+
+    /**
+     * <h3>QuestionStatistics</h3>
+     * Per-question state including totals, streak counters, success rate,
+     * and Leitner card level (1–6). The level indicates practice priority:
+     * lower is better (green), higher needs attention (red).
      */
     public static class QuestionStatistics implements Serializable {
         private static final long serialVersionUID = 1L;
 
+        /** Immutable identifier; expected to be unique within repository scope. */
         public final String questionTitle;
+
+        /** Total attempts recorded for this question. */
         public int totalAttempts = 0;
+
+        /** Total correct attempts recorded for this question. */
         public int correctAttempts = 0;
+
+        /** Consecutive correct answers (used to improve Leitner level). */
         public int consecutiveCorrect = 0;
+
+        /** Consecutive wrong answers (used to worsen Leitner level). */
         public int consecutiveWrong = 0;
+
+        /** Timestamp (ms since epoch) of the last attempt for freshness metrics. */
         public long lastAttempt = 0;
+
+        /**
+         * Leitner level of the card: 1 (mastered/green) … 6 (needs work/red).
+         * Updated via simple streak thresholds in {@link #recordAnswerImpl}.
+         */
         public int karteikartenLevel = 1; // 1-6 (1=green, 6=red)
 
+        /**
+         * Constructs statistics for a given question title.
+         * @param questionTitle immutable identifier (title) of the question
+         */
         public QuestionStatistics(String questionTitle) {
             this.questionTitle = questionTitle;
         }
 
+        /**
+         * @return success rate in percent (0–100) for this question
+         */
         public double getSuccessRate() {
             return totalAttempts > 0 ? (correctAttempts * 100.0 / totalAttempts) : 0;
         }
     }
 
     /**
-     * Statistics for themes.
+     * <h3>ThemeStatistics</h3>
+     * Per-theme aggregates: totals and last activity. Useful for theme
+     * dashboards and difficulty segmentation.
      */
     public static class ThemeStatistics implements Serializable {
         private static final long serialVersionUID = 1L;
 
+        /** The theme's display/name identifier. */
         public final String themeName;
+
+        /** How many distinct questions the theme holds (if known/maintained). */
         public int totalQuestions = 0;
+
+        /** Total number of attempts recorded across all questions in the theme. */
         public int totalAttempts = 0;
+
+        /** Total number of correct attempts across the theme. */
         public int correctAttempts = 0;
+
+        /** Timestamp (ms since epoch) when the theme was last played. */
         public long lastPlayed = 0;
 
+        /**
+         * Constructs statistics for a given theme.
+         * @param themeName name of the theme
+         */
         public ThemeStatistics(String themeName) {
             this.themeName = themeName;
         }
 
+        /**
+         * @return success rate for the theme in percent (0–100)
+         */
         public double getSuccessRate() {
             return totalAttempts > 0 ? (correctAttempts * 100.0 / totalAttempts) : 0;
         }
     }
 
+    // =============================
+    // CONSTRUCTORS
+    // =============================
+
+    /**
+     * Default constructor: initializes lambdas/UI and asynchronously
+     * loads statistics from disk. Use this in contexts where the panel
+     * acts standalone (no external delegates).
+     */
     public ModularStatisticsPanel() {
         initializeLambdas();
         initUI();
-        // Lazy load statistics in background
+        // Lazy load statistics in background after UI is ready.
         SwingUtilities.invokeLater(this::loadStatisticsAsync);
     }
 
+    /**
+     * Legacy constructor (deprecated): directly injects {@link BusinesslogicaDelegation}.
+     * Prefer {@link #ModularStatisticsPanel(GuiModuleDelegate)} to decouple wiring.
+     *
+     * @param delegate direct business logic delegate
+     * @deprecated use the delegate-composed constructor
+     */
     @Deprecated
     public ModularStatisticsPanel(BusinesslogicaDelegation delegate) {
         this.delegate = delegate;
@@ -126,10 +318,16 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         this.leitnerSystem = new AdaptiveLeitnerSystem(delegate);
         initializeLambdas();
         initUI();
-        updateThemeSelector();
+        updateThemeSelector(); // Populate UI with live themes if available.
         SwingUtilities.invokeLater(this::loadStatisticsAsync);
     }
 
+    /**
+     * Preferred constructor: accepts a composition root that supplies the
+     * business delegate and the Leitner system.
+     *
+     * @param modules GUI/business composition delegate
+     */
     public ModularStatisticsPanel(GuiModuleDelegate modules) {
         this.modules = modules;
         this.delegate = modules.business();
@@ -140,23 +338,34 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         SwingUtilities.invokeLater(this::loadStatisticsAsync);
     }
 
+    // =============================
+    // LAMBDA INITIALIZATION
+    // =============================
+
     /**
-     * Initialize lambda-based operations.
+     * Initializes all functional hooks used by the panel. The lambdas defined here
+     * are the canonical read/write path for statistics and encapsulate:
+     * <ul>
+     *   <li>map loader/creators for question/theme stats,</li>
+     *   <li>write-path for recording a result (including Leitner adjustments),</li>
+     *   <li>persistence side-effects triggered on each recorded answer.</li>
+     * </ul>
      */
     private void initializeLambdas() {
-        // Get or create question statistics
+        // Loader/creator for per-question record (thread-safe via CHM).
         getQuestionStats = questionTitle -> {
             return questionStats.computeIfAbsent(questionTitle, QuestionStatistics::new);
         };
 
-        // Get or create theme statistics
+        // Loader/creator for per-theme record (thread-safe via CHM).
         getThemeStats = themeName -> {
             return themeStats.computeIfAbsent(themeName, ThemeStatistics::new);
         };
 
-        // Record answer implementation
+        // Central write-path: updates question/theme aggregates and Leitner levels,
+        // appends to ledger, and triggers async persistence.
         recordAnswerImpl = result -> {
-            // Update question statistics
+            // --- Question-level updates ---
             QuestionStatistics qStats = getQuestionStats.apply(result.questionTitle);
             qStats.totalAttempts++;
             qStats.lastAttempt = result.timestamp;
@@ -166,7 +375,7 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
                 qStats.consecutiveCorrect++;
                 qStats.consecutiveWrong = 0;
 
-                // Improve Karteikarten level (move towards green)
+                // Improve Leitner level after a small correct streak (towards green).
                 if (qStats.consecutiveCorrect >= 2 && qStats.karteikartenLevel > 1) {
                     qStats.karteikartenLevel--;
                 }
@@ -174,13 +383,13 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
                 qStats.consecutiveWrong++;
                 qStats.consecutiveCorrect = 0;
 
-                // Worsen Karteikarten level (move towards red)
+                // Worsen Leitner level after consecutive wrong answers (towards red).
                 if (qStats.consecutiveWrong >= 2 && qStats.karteikartenLevel < 6) {
                     qStats.karteikartenLevel++;
                 }
             }
 
-            // Update theme statistics
+            // --- Theme-level updates ---
             if (result.theme != null && !result.theme.equals("Random")) {
                 ThemeStatistics tStats = getThemeStats.apply(result.theme);
                 tStats.totalAttempts++;
@@ -191,35 +400,48 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
                 }
             }
 
-            // Store result
+            // Append to session ledger.
             allResults.add(result);
+
+            // Persist asynchronously to avoid blocking EDT.
             saveStatistics();
         };
     }
 
+    // =============================
+    // PUBLIC API
+    // =============================
+
     /**
-     * Record a quiz answer.
+     * Records a quiz outcome and forwards it to both the statistics service and,
+     * when present, the adaptive Leitner system. The UI is refreshed asynchronously
+     * to keep the EDT responsive.
+     *
+     * @param result atomic outcome of a single answered question
      */
     public void recordAnswer(ModularQuizPlay.QuizResult result) {
         recordAnswerImpl.accept(result);
 
-        // Update Leitner System
+        // Notify Leitner engine so that card scheduling can adapt to new evidence.
         if (leitnerSystem != null) {
             leitnerSystem.processQuizResult(result);
         }
 
-        // Refresh UI asynchronously to avoid blocking
+        // Refresh UI asynchronously (EDT).
         SwingUtilities.invokeLater(this::refreshStatistics);
     }
 
     /**
-     * Get overall statistics.
+     * Computes global aggregates across all themes/questions. The returned map
+     * is intended for lightweight UI cards or external readout (no heavy charts).
+     *
+     * @return immutable snapshot of overall statistics (empty if no data)
      */
     public Map<String, Object> getOverallStatistics() {
         Map<String, Object> stats = new HashMap<>();
 
         if (questionStats.isEmpty()) {
-            return stats; // Return empty map if no data
+            return stats; // Return empty map if no data present.
         }
 
         int totalQuestions = questionStats.size();
@@ -239,14 +461,18 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Get theme statistics.
+     * Exposes the current theme-level aggregates for presentation.
+     * @return live view of theme statistics collection
      */
     public Collection<ThemeStatistics> getThemeStatistics() {
         return themeStats.values();
     }
 
     /**
-     * Get questions by Karteikarten level.
+     * Computes a grouping of question titles by their current Leitner level (1–6).
+     * This is typically used to render the "practice priority" distribution.
+     *
+     * @return map[level -> list of question titles]
      */
     public Map<Integer, List<String>> getQuestionsByKarteikartenLevel() {
         Map<Integer, List<String>> result = new HashMap<>();
@@ -257,14 +483,20 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         return result;
     }
 
+    // =============================
+    // PERSISTENCE
+    // =============================
+
     /**
-     * Save statistics to file asynchronously.
+     * Saves statistics to disk on a background thread. Uses a lightweight DTO
+     * ({@link StatisticsData}) to decouple storage from UI internals and
+     * maintain forward compatibility.
      */
     private void saveStatistics() {
-        // Save in background thread to avoid UI blocking
+        // Save in background thread to avoid UI blocking.
         new Thread(() -> {
             try {
-                // Create a lightweight data structure for saving
+                // Build DTO snapshot for serialization.
                 StatisticsData data = new StatisticsData();
                 data.questionStats.putAll(this.questionStats);
                 data.themeStats.putAll(this.themeStats);
@@ -280,20 +512,28 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Lightweight data structure for serialization.
+     * Lightweight, serialization-friendly container for persisted state.
+     * Kept private to preserve storage invariants.
      */
     private static class StatisticsData implements Serializable {
         private static final long serialVersionUID = 1L;
+
+        /** Snapshot of per-question aggregates. */
         final Map<String, QuestionStatistics> questionStats = new ConcurrentHashMap<>();
+
+        /** Snapshot of per-theme aggregates. */
         final Map<String, ThemeStatistics> themeStats = new ConcurrentHashMap<>();
+
+        /** Snapshot of session ledger (answer events). */
         final List<ModularQuizPlay.QuizResult> allResults = new ArrayList<>();
     }
 
     /**
-     * Load statistics from file asynchronously.
+     * Loads statistics asynchronously. Shows a light "loading" indicator first,
+     * performs I/O on a background thread, then updates the UI on the EDT.
      */
     private void loadStatisticsAsync() {
-        // Show loading indicator
+        // Set placeholders while data is loading (EDT).
         SwingUtilities.invokeLater(() -> {
             totalQuestionsValue.setText("...");
             correctAnswersValue.setText("...");
@@ -303,11 +543,11 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
             activeThemesValue.setText("...");
         });
 
-        // Load in background thread
+        // Background load.
         new Thread(() -> {
             try {
                 loadStatistics();
-                // Update UI on EDT
+                // Update UI on EDT.
                 SwingUtilities.invokeLater(() -> {
                     loadThemes();
                     refreshStatistics();
@@ -327,14 +567,16 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Load statistics from file (synchronous).
+     * Synchronously loads statistics from {@value #STATISTICS_FILE}.
+     * Supports both the current DTO format and the legacy serialized panel format
+     * for backward compatibility.
      */
     private void loadStatistics() {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(STATISTICS_FILE))) {
             Object obj = in.readObject();
 
             if (obj instanceof StatisticsData) {
-                // New format
+                // New preferred format.
                 StatisticsData data = (StatisticsData) obj;
                 this.questionStats.clear();
                 this.questionStats.putAll(data.questionStats);
@@ -343,7 +585,7 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
                 this.allResults.clear();
                 this.allResults.addAll(data.allResults);
             } else if (obj instanceof ModularStatisticsPanel) {
-                // Legacy format
+                // Legacy: panel instance was serialized; migrate fields.
                 ModularStatisticsPanel loaded = (ModularStatisticsPanel) obj;
                 this.questionStats.clear();
                 this.questionStats.putAll(loaded.questionStats);
@@ -357,8 +599,14 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         }
     }
 
+    // =============================
+    // EXTERNAL REFRESH HOOKS / COMMANDS
+    // =============================
+
     /**
-     * Public method to refresh themes and statistics (called from external components).
+     * Refreshes the list of available themes from the delegate (if present),
+     * and recomputes all UI aggregates based on the current selection.
+     * Intended to be called from the outside when theme data changes.
      */
     public void refreshThemesAndStatistics() {
         loadThemes();
@@ -366,7 +614,11 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Reset all statistics data.
+     * Deletes all persisted and in-memory statistics. Also resets any local Leitner
+     * scheduling file/state. The UI is immediately set to an empty view, and the user
+     * receives a confirmation dialog about the successful reset.
+     *
+     * <p><b>Irreversible operation.</b> Use with care.</p>
      */
     private void resetAllStatistics() {
         int result = JOptionPane.showConfirmDialog(
@@ -386,12 +638,12 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         );
 
         if (result == JOptionPane.YES_OPTION) {
-            // Clear all data
+            // Clear all data in memory.
             questionStats.clear();
             themeStats.clear();
             allResults.clear();
 
-            // Delete statistics file
+            // Delete statistics file on disk.
             try {
                 java.io.File statsFile = new java.io.File(STATISTICS_FILE);
                 if (statsFile.exists()) {
@@ -401,9 +653,9 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
                 System.err.println("Error deleting statistics file: " + e.getMessage());
             }
 
-            // Also reset Leitner system: clear in-memory instance and delete persistence file
+            // Also reset Leitner system persistence and clear the in-memory instance.
             try {
-                // Set to null so charts render empty after reset
+                // Set to null so charts render empty after reset.
                 this.leitnerSystem = null;
                 java.io.File leitnerFile = new java.io.File("leitner_system.dat");
                 if (leitnerFile.exists()) {
@@ -413,7 +665,7 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
                 System.err.println("Error resetting Leitner system: " + e.getMessage());
             }
 
-            // Reset UI immediately
+            // Reflect empty state in the UI immediately (EDT).
             SwingUtilities.invokeLater(() -> {
                 totalQuestionsValue.setText("0");
                 correctAnswersValue.setText("0");
@@ -426,7 +678,7 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
                     "Alle Daten wurden erfolgreich gelöscht.\n\n" +
                     "Beginnen Sie ein neues Quiz, um neue Statistiken zu sammeln!");
 
-                // Update charts
+                // Update charts to empty state.
                 updateChartsWithData(Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap());
             });
 
@@ -440,7 +692,32 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
             );
         }
     }
-    
+
+    // =============================
+    // (PLACEHOLDER) PRIVATE HELPERS
+    // =============================
+
+    /**
+     * Initializes the user interface of the ModularStatisticsPanel.
+     * <p>
+     * This method configures the panel's layout, sizes, and border, and
+     * sets up the main sections of the UI, including:
+     * <ul>
+     *   <li>Top control panel with theme selector, refresh and reset buttons</li>
+     *   <li>Center area containing tabbed panels for Overview, Detailed Statistics, and Charts</li>
+     *   <li>Bottom panel for status, last update timestamp, or export options</li>
+     * </ul>
+     * <p>
+     * Action listeners are attached to key UI components:
+     * <ul>
+     *   <li>{@link #refreshBtn}: reloads themes and refreshes statistics</li>
+     *   <li>{@link #resetBtn}: triggers full statistics reset through {@link #resetAllStatistics()}</li>
+     *   <li>{@link #themeSelector}: updates selected theme and refreshes statistics</li>
+     * </ul>
+     * <p>
+     * The UI is modular: tabbed views allow expansion for additional statistics or charts.
+     * Charts are painted dynamically and update automatically after quiz results are recorded.
+     */
     private void initUI() {
         setLayout(new BorderLayout(15, 15));
         setPreferredSize(new Dimension(900, 900));
@@ -494,6 +771,23 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         refreshStatistics();
     }
     
+    
+    
+    /**
+     * Creates the top control panel.
+     * <p>
+     * This panel provides interactive controls for:
+     * <ul>
+     *   <li>Theme selection via {@link #themeSelector}</li>
+     *   <li>Refreshing statistics via {@link #refreshBtn}</li>
+     *   <li>Resetting statistics via {@link #resetBtn}</li>
+     *   <li>Displaying the last update timestamp</li>
+     * </ul>
+     * The panel is subdivided into left, center, and right sections to separate UI concerns.
+     * Buttons are styled with theme-specific colors for intuitive UX.
+     *
+     * @return the configured top control {@link JPanel}
+     */
     private JPanel createTopControlPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Statistik Konfiguration"));
@@ -524,6 +818,27 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         return panel;
     }
     
+    
+    
+    
+    /**
+     * Creates the Overview tab panel.
+     * <p>
+     * This panel provides a summary of key metrics and a quick-text summary.
+     * Metrics include:
+     * <ul>
+     *   <li>Total questions answered {@link #totalQuestionsValue}</li>
+     *   <li>Correct answers {@link #correctAnswersValue}</li>
+     *   <li>Incorrect answers {@link #wrongAnswersValue}</li>
+     *   <li>Overall success rate {@link #successRateValue}</li>
+     *   <li>Average response time {@link #avgTimeValue}</li>
+     *   <li>Active themes {@link #activeThemesValue}</li>
+     * </ul>
+     * A scrollable summary area explains to users how to populate themes and questions
+     * and where to check progress after taking quizzes.
+     *
+     * @return the Overview {@link JPanel}
+     */
     private JPanel createOverviewPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         
@@ -570,6 +885,17 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         return panel;
     }
     
+    
+    
+    /**
+     * Creates the Detailed Statistics panel.
+     * <p>
+     * Displays a text-based view of all recorded quiz results and statistics
+     * in {@link #statisticsArea}. The area uses a monospaced font for better readability
+     * of tabular data. Scrollable to accommodate large datasets.
+     *
+     * @return the detailed statistics {@link JPanel}
+     */
     private JPanel createDetailPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         
@@ -590,6 +916,22 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         return panel;
     }
     
+    
+    /**
+     * Creates the Charts tab panel.
+     * <p>
+     * Contains multiple dynamically drawn charts in a grid layout:
+     * <ul>
+     *   <li>Success Rate Pie Chart {@link #successRateChart}</li>
+     *   <li>Theme Comparison Bar Chart {@link #themeComparisonChart}</li>
+     *   <li>Karteikarten Level Chart {@link #karteikartenChart}</li>
+     *   <li>Progress Over Time Chart</li>
+     * </ul>
+     * Chart panels use custom painting (Graphics2D) with anti-aliasing for smooth rendering.
+     * Instructions for chart updates are shown at the bottom of the panel.
+     *
+     * @return the charts {@link JPanel}
+     */
     private JPanel createChartsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -622,7 +964,12 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Create Success Rate Pie Chart.
+     * Creates a success rate pie chart panel.
+     * <p>
+     * The panel dynamically paints the success rate as a pie chart, showing
+     * correct and incorrect responses, legend, and success percentage.
+     *
+     * @return the success rate pie chart {@link JPanel}
      */
     private JPanel createSuccessRateChart() {
         return new JPanel() {
@@ -638,8 +985,17 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         };
     }
 
+
+
+    
+    
     /**
-     * Create Theme Comparison Bar Chart.
+     * Creates a theme comparison bar chart panel.
+     * <p>
+     * The chart visualizes success rates of individual themes.
+     * Supports filtering by the selected theme.
+     *
+     * @return the theme comparison {@link JPanel}
      */
     private JPanel createThemeComparisonChart() {
         return new JPanel() {
@@ -690,7 +1046,18 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Draw Success Rate Pie Chart.
+     * Draws the success rate pie chart on the given graphics context.
+     * <p>
+     * Visualizes overall quiz performance:
+     * <ul>
+     *   <li>Green slice for correct answers</li>
+     *   <li>Red slice for incorrect answers</li>
+     *   <li>Border, legend, and center percentage label</li>
+     * </ul>
+     *
+     * @param g2d graphics context
+     * @param width panel width
+     * @param height panel height
      */
     private void drawSuccessRatePieChart(Graphics2D g2d, int width, int height) {
         Map<String, Object> stats = getOverallStatistics();
@@ -774,7 +1141,20 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Draw Theme Comparison Bar Chart.
+     * Draws the theme comparison bar chart.
+     * <p>
+     * Bars are scaled according to success rate, sorted descending.
+     * Each bar includes:
+     * <ul>
+     *   <li>Theme name</li>
+     *   <li>Percentage success</li>
+     *   <li>Number of attempts</li>
+     * </ul>
+     * Colors are dynamically assigned based on performance.
+     *
+     * @param g2d graphics context
+     * @param width panel width
+     * @param height panel height
      */
     private void drawThemeComparisonBarChart(Graphics2D g2d, int width, int height) {
         Collection<ThemeStatistics> themeStats = getThemeStatistics();
@@ -864,7 +1244,9 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Get color based on success rate.
+     * Determines the color for a theme based on its success rate.
+     * @param successRate percentage of correct answers for the theme
+     * @return Color representing performance (green/yellow/orange/red)
      */
     private Color getThemeColor(double successRate) {
         if (successRate >= 80) {
@@ -879,7 +1261,12 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Draw Karteikarten Level Chart.
+     * Draws the Leitner card level chart.
+     * Bars indicate number of questions at each Leitner level.
+     * Overlays show due cards that require repetition.
+     * @param g2d the Graphics2D context
+     * @param width width of the chart
+     * @param height height of the chart
      */
     private void drawKarteikartenLevelChart(Graphics2D g2d, int width, int height) {
         Map<Integer, List<AdaptiveLeitnerCard>> leitnerData = getLeitnerStatistics();
@@ -986,7 +1373,10 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
     }
 
     /**
-     * Draw Progress Over Time Chart.
+     * Draws a progress-over-time chart summarizing correct answers over sessions.
+     * @param g2d the Graphics2D context
+     * @param width width of the chart
+     * @param height height of the chart
      */
     private void drawProgressOverTimeChart(Graphics2D g2d, int width, int height) {
         // Chart title
@@ -1043,6 +1433,13 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         }
     }
     
+    
+    // ---------------------------------------------------------
+    // Panel and UI creation
+    // ---------------------------------------------------------
+    
+    
+    /** Creates the bottom panel with status label and settings button */
     private JPanel createBottomPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
@@ -1062,6 +1459,8 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         return panel;
     }
     
+    
+    /** Creates a card panel displaying a specific metric */
     private JPanel createMetricCard(String title, JLabel valueLabel, String icon, Color color) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -1093,6 +1492,7 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         return card;
     }
     
+    /** Styles a JButton consistently with color and font */
     private void styleButton(JButton button, Color color) {
         button.setBackground(color);
         button.setForeground(Color.WHITE);
@@ -1101,6 +1501,8 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         button.setBorder(BorderFactory.createRaisedBevelBorder());
     }
     
+    
+    /** Loads available themes into the theme selector */
     private void loadThemes() {
         themeSelector.removeAllItems();
         themeSelector.addItem("Alle Themen");
@@ -1123,7 +1525,9 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
             themeSelector.addItem("(Keine Themen verfügbar)");
         }
     }
-    
+    /**
+     * Refreshes themes, metrics, charts, and statistics asynchronously.
+     */
     private void refreshStatistics() {
         // Update in background to avoid UI blocking
         new Thread(() -> {
@@ -1145,12 +1549,14 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         }).start();
     }
     
+    /** Refresh metric cards using current statistics */
     private void updateMetricCards() {
         // Get real statistics from integrated service
         Map<String, Object> stats = getOverallStatistics();
         updateMetricCardsWithData(stats);
     }
 
+    /** Updates metric cards with provided statistics data */
     private void updateMetricCardsWithData(Map<String, Object> stats) {
         if (stats.isEmpty()) {
             totalQuestionsValue.setText("0");
@@ -1187,6 +1593,8 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         }
     }
     
+    
+    /** Updates detailed statistics text area */
     private void updateDetailedStatistics() {
         Map<String, Object> stats = getOverallStatistics();
         Collection<ThemeStatistics> themeStatistics = getThemeStatistics();
@@ -1194,6 +1602,8 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         updateDetailedStatisticsWithData(stats, themeStatistics, karteikartenData);
     }
 
+    
+    /** Updates detailed statistics with precomputed data */
     private void updateDetailedStatisticsWithData(Map<String, Object> stats,
                                                   Collection<ThemeStatistics> themeStatistics,
                                                   Map<Integer, List<String>> karteikartenData) {
@@ -1401,6 +1811,10 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         settingsDialog.pack();
         settingsDialog.setVisible(true);
     }
+    
+    // ---------------------------------------------------------
+    // Settings and Export
+    // ---------------------------------------------------------
 
     /**
      * Export statistics to file.
@@ -1560,6 +1974,12 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         }
     }
 
+    
+    // ---------------------------------------------------------
+    // Utility and calculation methods
+    // ---------------------------------------------------------
+    
+    
     /**
      * Calculate average answer time from all quiz results.
      */
@@ -1581,6 +2001,12 @@ public class ModularStatisticsPanel extends JPanel implements Serializable {
         return count > 0 ? totalTime / count : 0.0;
     }
 
+    
+    // =========================================================
+    // Inner Classes: QuestionStatistics, ThemeStatistics, etc.
+    // =========================================================
+    
+    
     /**
      * Get Leitner statistics filtered by selected theme.
      */

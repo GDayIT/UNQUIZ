@@ -13,12 +13,10 @@ import java.util.Properties;
  * Supports:
  * - application.properties in the current working directory (user.dir)
  * - CLI args in the form --key=value (e.g., --merge=quiz)
-<<<<<<< HEAD
  * 
  * @author D.Georgiou
  * @version 1.0
-=======
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
+ * 
  */
 public final class AppConfigService {
 

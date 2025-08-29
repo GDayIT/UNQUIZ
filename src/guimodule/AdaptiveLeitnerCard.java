@@ -6,25 +6,33 @@ import java.time.LocalDateTime;
 import java.util.Random;
 
 /**
- * Verbesserte Adaptive Hybrid-Leitner Algorithmus mit 6 Kästen.
+ * Represents a single adaptive Leitner flashcard for spaced repetition learning.
  * 
- * Verbesserungen gegenüber ChatGPT Version:
- * - Bessere Schwierigkeitsanpassung
- * - Intelligentere Rückstufung
- * - Performance-Tracking
- * - Zeitbasierte Anpassungen
- * - Bessere Integration mit Quiz-System
-<<<<<<< HEAD
+ * <p>This class implements an enhanced 6-box Leitner algorithm with adaptive difficulty:
+ * <ul>
+ *   <li>Tracks performance metrics such as consecutive correct/incorrect answers.</li>
+ *   <li>Calculates next review date based on performance, difficulty, and randomness.</li>
+ *   <li>Supports intelligent promotion and demotion across Leitner boxes.</li>
+ *   <li>Tracks average response time and adjusts difficulty dynamically.</li>
+ *   <li>Integrates with modular quiz system via questionId and theme.</li>
+ * </ul>
  * 
- * @author D.Georgiou
- * @version 1.0
-=======
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
+ * <p>Serialization: This class implements {@link Serializable} to persist Leitner cards
+ * between application sessions.
+ * 
+ * Author: D.Georgiou
+ * Version: 1.0
  */
 public class AdaptiveLeitnerCard implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    // ================== ENUMS ==================
+    
+    /**
+     * Defines card difficulty levels.
+     * Each level has a display name and a time factor used for interval calculation.
+     */
     public enum Difficulty { 
         EASY("Einfach", 0.3), 
         MEDIUM("Mittel", 1.0), 
@@ -40,270 +48,206 @@ public class AdaptiveLeitnerCard implements Serializable {
         }
     }
 
-    private final String questionId;
-    private final String theme;
-    private final String questionTitle;
-
-    // Leitner System State
-    private int box; // 1 = Level 1 (rot), 6 = Level 6 (grün)
-    private Difficulty difficulty;
-
-    // Performance Tracking
-    private int consecutiveCorrect;
-    private int consecutiveWrong;
-    private int totalAttempts;
-    private int totalCorrect;
-    private double averageResponseTime; // in Sekunden
+    // ================== FIELDS ==================
     
-    // Timing
-    private LocalDateTime lastReviewed;
-    private LocalDate nextReviewDate;
-    private LocalDateTime createdAt;
+    // --- Identification ---
+    private final String questionId;          // Unique ID for the question
+    private final String theme;               // Theme/topic of the question
+    private final String questionTitle;       // Title of the question
 
-    // Baseline Intervalle pro Level (in Tagen) - Verbessert
+    // --- Leitner system state ---
+    private int box;                          // Current Leitner box (1-6)
+    private Difficulty difficulty;            // Current difficulty level
+
+    // --- Performance tracking ---
+    private int consecutiveCorrect;           // Consecutive correct answers
+    private int consecutiveWrong;             // Consecutive incorrect answers
+    private int totalAttempts;                // Total attempts
+    private int totalCorrect;                 // Total correct answers
+    private double averageResponseTime;       // Average response time in seconds
+
+    // --- Timing ---
+    private LocalDateTime lastReviewed;       // Last time this card was reviewed
+    private LocalDate nextReviewDate;         // Date when the card is due next
+    private final LocalDateTime createdAt;    // Creation timestamp
+
+    // --- Constants for interval calculation ---
     private static final int[] BASE_INTERVALS = {1, 3, 7, 16, 35, 80};
-    
-    // Schwierigkeitsfaktoren für Intervalle
-    private static final double[] DIFFICULTY_FACTORS = {2.0, 1.0, 0.6, 0.3}; // EASY, MEDIUM, HARD, VERY_HARD
+    private static final double[] DIFFICULTY_FACTORS = {2.0, 1.0, 0.6, 0.3};
 
-    public AdaptiveLeitnerCard(String questionId, String theme, String questionTitle) {
+    // ================== CONSTRUCTORS ==================
+
+    /**
+     * Full constructor for database or deserialization purposes.
+     */
+    public AdaptiveLeitnerCard(
+            String questionId,
+            String theme,
+            String questionTitle,
+            int box,
+            Difficulty difficulty,
+            int consecutiveCorrect,
+            int consecutiveWrong,
+            int totalAttempts,
+            int totalCorrect,
+            double averageResponseTime,
+            LocalDateTime lastReviewed,
+            LocalDate nextReviewDate
+    ) {
         this.questionId = questionId;
         this.theme = theme;
         this.questionTitle = questionTitle;
-        this.box = 1; // Start in Level 1 (rot) - realistischer
-        this.difficulty = Difficulty.MEDIUM;
-        this.consecutiveCorrect = 0;
-        this.consecutiveWrong = 0;
-        this.totalAttempts = 0;
-        this.totalCorrect = 0;
-        this.averageResponseTime = 0.0;
+        this.box = box;
+        this.difficulty = difficulty != null ? difficulty : Difficulty.MEDIUM;
+        this.consecutiveCorrect = consecutiveCorrect;
+        this.consecutiveWrong = consecutiveWrong;
+        this.totalAttempts = totalAttempts;
+        this.totalCorrect = totalCorrect;
+        this.averageResponseTime = averageResponseTime;
+        this.lastReviewed = lastReviewed;
+        this.nextReviewDate = nextReviewDate != null ? nextReviewDate : LocalDate.now();
         this.createdAt = LocalDateTime.now();
-        this.lastReviewed = null;
-        this.nextReviewDate = LocalDate.now(); // Sofort verfügbar
     }
 
     /**
-     * Verarbeitet ein Lernergebnis mit Antwortzeit.
-     * VERBESSERT: Berücksichtigt Antwortzeit für Schwierigkeitsanpassung
+     * Simplified constructor for new cards starting at box 1.
+     */
+    public AdaptiveLeitnerCard(String questionId, String theme, String questionTitle) {
+        this(questionId, theme, questionTitle, 1, Difficulty.MEDIUM, 0, 0, 0, 0, 0.0, null, LocalDate.now());
+    }
+
+    // ================== METHODS ==================
+
+    /**
+     * Processes a learning result for the card.
+     * Updates performance statistics, adjusts difficulty, and calculates next review date.
+     * 
+     * @param correct whether the answer was correct
+     * @param responseTimeSeconds response time in seconds
      */
     public void processResult(boolean correct, double responseTimeSeconds) {
         totalAttempts++;
         lastReviewed = LocalDateTime.now();
-        
-        // Update average response time
         updateAverageResponseTime(responseTimeSeconds);
-        
+
         if (correct) {
             totalCorrect++;
             consecutiveCorrect++;
             consecutiveWrong = 0;
 
-            // VERBESSERT: Intelligentere Aufstiegskriterien
-            boolean shouldPromote = shouldPromoteToNextLevel(responseTimeSeconds);
-            
-            if (shouldPromote && box < 6) {
+            if (shouldPromoteToNextLevel(responseTimeSeconds) && box < 6) {
                 box++;
-                consecutiveCorrect = 0; // Reset für nächste Stufe
-                
-                // Schwierigkeit anpassen basierend auf Performance
+                consecutiveCorrect = 0;
                 adjustDifficultyAfterPromotion(responseTimeSeconds);
             }
 
         } else {
             consecutiveWrong++;
             consecutiveCorrect = 0;
-
-            // VERBESSERT: Intelligentere Rückstufung
             handleIncorrectAnswer();
         }
 
-        // Neues Intervall berechnen
         updateNextReviewDate();
     }
-    
-    /**
-     * VERBESSERT: Intelligentere Aufstiegskriterien
-     */
+
     private boolean shouldPromoteToNextLevel(double responseTime) {
-        // Basis: 2-3 richtige Antworten je nach Level
         int requiredCorrect = Math.max(2, Math.min(4, box));
-        
-        if (consecutiveCorrect < requiredCorrect) {
-            return false;
-        }
-        
-        // Zusätzliche Kriterien für höhere Level
+        if (consecutiveCorrect < requiredCorrect) return false;
+
         if (box >= 4) {
-            // Höhere Level: Antwortzeit muss angemessen sein
-            double expectedTime = difficulty.timeFactor * 10; // Basis: 10 Sekunden
-            if (responseTime > expectedTime * 2) {
-                return false; // Zu langsam für Aufstieg
-            }
-            
-            // Erfolgsrate muss hoch genug sein
+            double expectedTime = difficulty.timeFactor * 10;
             double successRate = (double) totalCorrect / totalAttempts;
-            if (successRate < 0.7) {
-                return false;
-            }
+            if (responseTime > expectedTime * 2 || successRate < 0.7) return false;
         }
-        
+
         return true;
     }
-    
-    /**
-     * VERBESSERT: Schwierigkeitsanpassung nach Aufstieg
-     */
+
     private void adjustDifficultyAfterPromotion(double responseTime) {
         double expectedTime = difficulty.timeFactor * 10;
-        
         if (responseTime < expectedTime * 0.5 && difficulty != Difficulty.EASY) {
-            // Sehr schnell → einfacher machen
             difficulty = Difficulty.values()[Math.max(0, difficulty.ordinal() - 1)];
         } else if (responseTime > expectedTime * 1.5 && difficulty != Difficulty.VERY_HARD) {
-            // Zu langsam → schwerer machen
             difficulty = Difficulty.values()[Math.min(3, difficulty.ordinal() + 1)];
         }
     }
-    
-    /**
-     * VERBESSERT: Intelligentere Rückstufung
-     */
+
     private void handleIncorrectAnswer() {
         if (consecutiveWrong == 1) {
-            // Erste falsche Antwort: sanfte Rückstufung
-            if (box > 3) {
-                box = Math.max(1, box - 2); // Höhere Level: stärkere Rückstufung
-            } else {
-                box = Math.max(1, box - 1); // Niedrige Level: sanfte Rückstufung
-            }
-            
-            // Schwierigkeit leicht erhöhen
-            if (difficulty == Difficulty.EASY) {
-                difficulty = Difficulty.MEDIUM;
-            }
-            
+            box = Math.max(1, box > 3 ? box - 2 : box - 1);
+            if (difficulty == Difficulty.EASY) difficulty = Difficulty.MEDIUM;
         } else if (consecutiveWrong >= 2) {
-            // Mehrere falsche Antworten: zurück zu Level 1
             box = 1;
             difficulty = Difficulty.HARD;
-            consecutiveWrong = 0; // Reset
-        }
-    }
-    
-    /**
-     * VERBESSERT: Durchschnittliche Antwortzeit aktualisieren
-     */
-    private void updateAverageResponseTime(double responseTime) {
-        if (totalAttempts == 1) {
-            averageResponseTime = responseTime;
-        } else {
-            // Exponential moving average für bessere Anpassung
-            double alpha = 0.3; // Gewichtung neuer Werte
-            averageResponseTime = alpha * responseTime + (1 - alpha) * averageResponseTime;
+            consecutiveWrong = 0;
         }
     }
 
-    /**
-     * VERBESSERT: Intelligentere Intervallberechnung
-     */
+    private void updateAverageResponseTime(double responseTime) {
+        if (totalAttempts == 1) averageResponseTime = responseTime;
+        else averageResponseTime = 0.3 * responseTime + 0.7 * averageResponseTime;
+    }
+
     private void updateNextReviewDate() {
         int baseInterval = BASE_INTERVALS[box - 1];
-        
-        // Schwierigkeitsfaktor anwenden
         double difficultyFactor = DIFFICULTY_FACTORS[difficulty.ordinal()];
-        
-        // Performance-basierte Anpassung
         double performanceFactor = calculatePerformanceFactor();
-        
-        // Zufallsvariation (±15%) für "desirable difficulty"
-        Random random = new Random();
-        double noiseFactor = 0.85 + random.nextDouble() * 0.3;
-        
-        // Finale Berechnung
-        double finalInterval = baseInterval * difficultyFactor * performanceFactor * noiseFactor;
-        int intervalDays = Math.max(1, (int) Math.round(finalInterval));
-        
+        double noiseFactor = 0.85 + new Random().nextDouble() * 0.3;
+        int intervalDays = Math.max(1, (int)Math.round(baseInterval * difficultyFactor * performanceFactor * noiseFactor));
         nextReviewDate = LocalDate.now().plusDays(intervalDays);
     }
-    
-    /**
-     * VERBESSERT: Performance-basierte Anpassung
-     */
+
     private double calculatePerformanceFactor() {
-        if (totalAttempts < 3) {
-            return 1.0; // Nicht genug Daten
-        }
-        
+        if (totalAttempts < 3) return 1.0;
         double successRate = (double) totalCorrect / totalAttempts;
-        
-        // Erfolgsrate-basierte Anpassung
-        if (successRate >= 0.9) {
-            return 1.3; // Sehr gut → längere Intervalle
-        } else if (successRate >= 0.7) {
-            return 1.0; // Normal
-        } else if (successRate >= 0.5) {
-            return 0.8; // Schlecht → kürzere Intervalle
-        } else {
-            return 0.6; // Sehr schlecht → viel kürzere Intervalle
-        }
+        if (successRate >= 0.9) return 1.3;
+        else if (successRate >= 0.7) return 1.0;
+        else if (successRate >= 0.5) return 0.8;
+        else return 0.6;
     }
 
-    /**
-     * Prüft ob die Karte zur Wiederholung fällig ist
-     */
+    /** Returns true if the card is due for review. */
     public boolean isDue() {
         return !LocalDate.now().isBefore(nextReviewDate);
     }
-    
-    /**
-     * Berechnet Priorität für Sortierung (höher = wichtiger)
-     */
+
+    /** Returns a priority score for sorting cards. */
     public double getPriority() {
-        double basePriority = 7 - box; // Level 1 = 6, Level 6 = 1
-        
-        // Überfällige Karten haben höhere Priorität
+        double basePriority = 7 - box;
         long daysOverdue = LocalDate.now().toEpochDay() - nextReviewDate.toEpochDay();
-        if (daysOverdue > 0) {
-            basePriority += daysOverdue * 0.5;
-        }
-        
-        // Schwierige Karten haben höhere Priorität
+        if (daysOverdue > 0) basePriority += daysOverdue * 0.5;
         basePriority += difficulty.ordinal() * 0.3;
-        
         return basePriority;
     }
 
-    // ================ GETTERS ================
-    
+    // ================== GETTERS ==================
+
     public String getQuestionId() { return questionId; }
     public String getTheme() { return theme; }
     public String getQuestionTitle() { return questionTitle; }
     public int getBox() { return box; }
-    public int getLevel() { return box; } // Alias für bessere Verständlichkeit
+    public int getLevel() { return box; }
     public Difficulty getDifficulty() { return difficulty; }
     public LocalDate getNextReviewDate() { return nextReviewDate; }
     public LocalDateTime getLastReviewed() { return lastReviewed; }
     public LocalDateTime getCreatedAt() { return createdAt; }
-    
     public int getConsecutiveCorrect() { return consecutiveCorrect; }
     public int getConsecutiveWrong() { return consecutiveWrong; }
     public int getTotalAttempts() { return totalAttempts; }
     public int getTotalCorrect() { return totalCorrect; }
     public double getAverageResponseTime() { return averageResponseTime; }
-    
-    public double getSuccessRate() {
-        return totalAttempts > 0 ? (double) totalCorrect / totalAttempts : 0.0;
-    }
-    
+    public double getSuccessRate() { return totalAttempts > 0 ? (double) totalCorrect / totalAttempts : 0.0; }
+
+    /** Returns a color code for UI status visualization. */
     public String getStatusColor() {
         switch (box) {
-            case 1: return "#FF4444"; // Rot
-            case 2: return "#FF8800"; // Orange
-            case 3: return "#FFBB00"; // Gelb-Orange
-            case 4: return "#DDDD00"; // Gelb
-            case 5: return "#88DD00"; // Hellgrün
-            case 6: return "#44AA44"; // Grün
-            default: return "#888888"; // Grau
+            case 1: return "#FF4444";
+            case 2: return "#FF8800";
+            case 3: return "#FFBB00";
+            case 4: return "#DDDD00";
+            case 5: return "#88DD00";
+            case 6: return "#44AA44";
+            default: return "#888888";
         }
     }
 

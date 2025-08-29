@@ -6,132 +6,140 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Functional delegation interface for persistence operations.
+ * {@code PersistenceDelegate} defines a functional interface for modular,
+ * lambda-based persistence operations in the dbbl package.
+ * <p>
+ * All operations are expressed as functional interfaces, enabling:
+ * <ul>
+ *   <li>Lambda expressions for implementation</li>
+ *   <li>Method references for delegation</li>
+ *   <li>Functional composition and chaining</li>
+ *   <li>Reactive and asynchronous execution patterns</li>
+ * </ul>
+ * <p>
+ * This interface provides contracts for:
+ * - Theme operations
+ * - Question operations
+ * - Leitner card persistence (extendable)
+ * - Session management (extendable)
+ * - Persistence lifecycle (save/load)
+ * - Event notifications and error handling
  * 
- * This interface defines lambda-based contracts for all persistence operations,
- * enabling complete modularity and functional programming patterns.
- * 
- * Each operation is defined as a functional interface to support:
- * - Lambda expressions for implementation
- * - Method references for delegation
- * - Functional composition and chaining
- * - Asynchronous execution patterns
- * 
-<<<<<<< HEAD
- * @author D.Georgiou
+ * @author D.
  * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public interface PersistenceDelegate {
-    
-    // === THEME OPERATIONS ===
-    
+
+    // ------------------- THEME OPERATIONS -------------------
+
     /**
-     * Lambda for saving theme data.
-     * Function takes (title, description) and returns success status.
+     * Lambda for saving a theme.
+     * Accepts a {@link ThemeData} object containing title and description.
+     * Returns {@code true} if saving was successful, {@code false} otherwise.
      */
     Function<ThemeData, Boolean> saveTheme();
-    
+
     /**
-     * Lambda for loading theme data.
-     * Function takes title and returns ThemeData or null.
+     * Lambda for loading theme data by title.
+     * Returns {@link ThemeData} or null if the theme does not exist.
      */
     Function<String, ThemeData> loadTheme();
-    
+
     /**
-     * Lambda for deleting theme.
-     * Function takes title and returns success status.
+     * Lambda for deleting a theme by title.
+     * Returns {@code true} if deletion was successful, {@code false} otherwise.
      */
     Function<String, Boolean> deleteTheme();
-    
+
     /**
-     * Lambda for getting all theme titles.
-     * Supplier returns list of all available themes.
+     * Lambda to retrieve all theme titles.
+     * Returns a {@link List} of theme names.
      */
     Supplier<List<String>> getAllThemes();
-    
-    // === QUESTION OPERATIONS ===
-    
+
+    // ------------------- QUESTION OPERATIONS -------------------
+
     /**
-     * Lambda for saving question data.
-     * Function takes QuestionData and returns success status.
+     * Lambda for saving a question.
+     * Accepts {@link QuestionData} containing text, answers, and correctness flags.
+     * Returns {@code true} if saving was successful.
      */
     Function<QuestionData, Boolean> saveQuestion();
-    
+
     /**
-     * Lambda for loading questions by theme.
-     * Function takes theme title and returns list of questions.
+     * Lambda to load all questions of a specific theme.
+     * Accepts a theme title and returns a list of {@link QuestionData}.
      */
     Function<String, List<QuestionData>> loadQuestionsByTheme();
-    
+
     /**
-     * Lambda for deleting question.
-     * Function takes (theme, questionIndex) and returns success status.
+     * Lambda to delete a question by theme and index.
+     * Accepts a {@link QuestionDeleteRequest} and returns success status.
      */
     Function<QuestionDeleteRequest, Boolean> deleteQuestion();
-    
-    // === PERSISTENCE LIFECYCLE ===
-    
+
+    // ------------------- PERSISTENCE LIFECYCLE -------------------
+
     /**
-     * Lambda for complete data persistence.
+     * Lambda to persist all data to permanent storage.
      * Runnable executes full save operation.
      */
     Runnable persistAll();
-    
+
     /**
-     * Lambda for data loading.
+     * Lambda to load all persisted data.
      * Runnable executes full load operation.
      */
     Runnable loadAll();
-    
+
     /**
-     * Lambda for backup creation.
-     * Function takes backup name and returns success status.
+     * Lambda to create a backup of the persisted data.
+     * Accepts backup name and returns {@code true} if backup succeeded.
      */
     Function<String, Boolean> createBackup();
-    
-    // === EVENT CALLBACKS ===
-    
+
+    // ------------------- EVENT CALLBACKS -------------------
+
     /**
-     * Lambda for data change notifications.
-     * Consumer receives change event data.
+     * Event handler for data changes (themes/questions).
+     * Accepts a {@link DataChangeEvent} describing the change.
      */
     Consumer<DataChangeEvent> onDataChanged();
-    
+
     /**
-     * Lambda for error handling.
-     * Consumer receives error information.
+     * Event handler for errors occurring during persistence operations.
+     * Accepts a {@link PersistenceError} object with details.
      */
     Consumer<PersistenceError> onError();
-    
-    // === UTILITY CLASSES ===
-    
+
+    // ------------------- INTERNAL DATA TRANSFER OBJECTS -------------------
+
     /**
-     * Data transfer object for theme information.
+     * Data Transfer Object representing a theme.
      */
     class ThemeData {
-        public final String title;
-        public final String description;
-        public final long timestamp;
-        
+        public final String title;        // Theme title
+        public final String description;  // Theme description
+        public final long timestamp;      // Creation timestamp
+
         public ThemeData(String title, String description) {
             this.title = title;
             this.description = description;
             this.timestamp = System.currentTimeMillis();
         }
     }
-    
+
     /**
-     * Data transfer object for question information.
+     * Data Transfer Object representing a question.
      */
     class QuestionData {
-        public final String theme;
-        public final String title;
-        public final String questionText;
-        public final String explanation;
-        public final List<String> answers;
-        public final List<Boolean> correctFlags;
-        public final long timestamp;
+        public final String theme;            // Associated theme
+        public final String title;            // Question title
+        public final String questionText;     // Question text
+        public final String explanation;      // Optional explanation
+        public final List<String> answers;    // List of answer options
+        public final List<Boolean> correctFlags; // Correctness flags
+        public final long timestamp;          // Creation timestamp
 
         public QuestionData(String theme, String title, String questionText,
                            List<String> answers, List<Boolean> correctFlags) {
@@ -139,7 +147,7 @@ public interface PersistenceDelegate {
         }
 
         public QuestionData(String theme, String title, String questionText, String explanation,
-                           List<String> answers, List<Boolean> correctFlags) {
+                            List<String> answers, List<Boolean> correctFlags) {
             this.theme = theme;
             this.title = title;
             this.questionText = questionText;
@@ -149,44 +157,44 @@ public interface PersistenceDelegate {
             this.timestamp = System.currentTimeMillis();
         }
     }
-    
+
     /**
-     * Request object for question deletion.
+     * Request object representing a question deletion operation.
      */
     class QuestionDeleteRequest {
-        public final String theme;
-        public final int questionIndex;
-        
+        public final String theme;      // Theme name
+        public final int questionIndex; // Index of question in the theme list
+
         public QuestionDeleteRequest(String theme, int questionIndex) {
             this.theme = theme;
             this.questionIndex = questionIndex;
         }
     }
-    
+
     /**
-     * Event object for data changes.
+     * Event object representing a change in data.
      */
     class DataChangeEvent {
-        public final String type; // "THEME_ADDED", "QUESTION_UPDATED", etc.
-        public final String target; // affected theme/question
-        public final long timestamp;
-        
+        public final String type;       // Change type, e.g., "THEME_ADDED"
+        public final String target;     // Target object, e.g., theme/question
+        public final long timestamp;    // Timestamp of event
+
         public DataChangeEvent(String type, String target) {
             this.type = type;
             this.target = target;
             this.timestamp = System.currentTimeMillis();
         }
     }
-    
+
     /**
-     * Error information for persistence operations.
+     * Error object representing an issue during persistence.
      */
     class PersistenceError {
-        public final String operation;
-        public final String message;
-        public final Throwable cause;
-        public final long timestamp;
-        
+        public final String operation;  // Operation name
+        public final String message;    // Error message
+        public final Throwable cause;   // Optional cause
+        public final long timestamp;    // Timestamp
+
         public PersistenceError(String operation, String message, Throwable cause) {
             this.operation = operation;
             this.message = message;

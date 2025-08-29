@@ -2,36 +2,41 @@ package guimodule;
 
 import dbbl.BusinesslogicaDelegation;
 import dbbl.RepoQuizeeQuestions;
+
 import java.awt.*;
 import java.io.Serializable;
 import java.util.*;
 import java.util.List;
 import java.util.function.*;
+
 import javax.swing.*;
 
 /**
- * Modular Quiz Play Panel with delegation, persistence and lambda-based operations.
+ * ModularQuizPlay ist ein interaktives Quiz-Panel, das folgende Features bietet:
+ * <ul>
+ *   <li>Random Quiz-Modus (alle Themen gemischt)</li>
+ *   <li>Themen-spezifischer Quiz-Modus</li>
+ *   <li>Persistente Spielstatistiken</li>
+ *   <li>Lambda-basierte Event-Handler</li>
+ *   <li>Leitner-System für adaptive Wiederholung</li>
+ * </ul>
  * 
- * Features:
- * - Random quiz mode (all themes mixed)
- * - Theme-specific quiz mode
- * - Persistent game statistics
- * - Lambda-based event handling
- * - Functional composition for quiz logic
+ * <p>Die Klasse stellt ein voll funktionsfähiges GUI bereit, inklusive 
+ * Anzeige von Fragen, Auswahlmöglichkeiten, Feedback und Fortschrittsanzeige.</p>
  * 
-<<<<<<< HEAD
- * @author D.Georgiou
+ * <p>Autor: D.Georgiou</p>
  * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public class ModularQuizPlay extends JPanel implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
+    // --- Core Services ---
     private final BusinesslogicaDelegation delegate;
     private final ModularQuizStatistics statisticsService;
     private final GuiModuleDelegate modules;
-    
-    // UI Components
+
+    // --- UI Components ---
     private final JLabel questionLabel = new JLabel("", SwingConstants.CENTER);
     private final JPanel answersPanel = new JPanel(new GridLayout(0, 1, 5, 5));
     private final JButton nextBtn = new JButton("Nächste Frage");
@@ -44,8 +49,8 @@ public class ModularQuizPlay extends JPanel implements Serializable {
     private final JButton startQuizBtn = new JButton("Quiz starten");
     private final JButton randomQuizBtn = new JButton("Random Quiz");
     private final JButton leitnerQuizBtn = new JButton("🧠 Leitner-Modus");
-    
-    // Game State
+
+    // --- Game State ---
     private List<RepoQuizeeQuestions> currentQuestions = new ArrayList<>();
     private int currentIndex = -1;
     private int correctAnswers = 0;
@@ -56,22 +61,27 @@ public class ModularQuizPlay extends JPanel implements Serializable {
     private boolean questionAnswered = false;
     private String currentTheme = null;
 
-    // Time tracking
+    // --- Time Tracking ---
     private long questionStartTime = 0;
     private long totalQuizTime = 0;
     private long quizStartTime = 0;
-    
-    // Lambda-based operations
+
+    // --- Lambda-based operations ---
     private Function<String, List<RepoQuizeeQuestions>> getQuestionsForTheme;
     private Supplier<List<RepoQuizeeQuestions>> getAllQuestions;
     private Consumer<QuizResult> recordQuizResult;
     private Runnable onQuizCompleted;
 
-    // Adaptive Leitner System
+    // --- Leitner System ---
     private AdaptiveLeitnerSystem leitnerSystem;
-    
+
+    // --- External statistics integration ---
+    private ModularStatisticsPanel externalStatsPanel;
+
+    // === INNER CLASSES ===
+
     /**
-     * Quiz result data for statistics.
+     * QuizResult speichert die Ergebnisse einer beantworteten Frage.
      */
     public static class QuizResult implements Serializable {
         private static final long serialVersionUID = 1L;
@@ -81,10 +91,20 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         public final String correctAnswer;
         public final boolean isCorrect;
         public final long timestamp;
-        public final long answerTimeMs; // Zeit in Millisekunden für diese Antwort
+        public final long answerTimeMs;
 
+        /**
+         * Konstruktor für ein QuizResult.
+         *
+         * @param theme Thema der Frage
+         * @param questionTitle Titel der Frage
+         * @param userAnswer vom Benutzer ausgewählte Antwort
+         * @param correctAnswer korrekte Antwort(en)
+         * @param isCorrect ob die Antwort korrekt war
+         * @param answerTimeMs Zeit in Millisekunden für die Beantwortung
+         */
         public QuizResult(String theme, String questionTitle, String userAnswer,
-                         String correctAnswer, boolean isCorrect, long answerTimeMs) {
+                          String correctAnswer, boolean isCorrect, long answerTimeMs) {
             this.theme = theme;
             this.questionTitle = questionTitle;
             this.userAnswer = userAnswer;
@@ -95,13 +115,20 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         }
 
         /**
-         * Get answer time in seconds.
+         * Gibt die Antwortzeit in Sekunden zurück.
+         *
+         * @return Zeit in Sekunden
          */
         public double getAnswerTimeSeconds() {
             return answerTimeMs / 1000.0;
         }
     }
 
+    // === KONSTRUKTOREN ===
+
+    /**
+     * @deprecated Use ModularQuizPlay(GuiModuleDelegate) instead.
+     */
     @Deprecated
     public ModularQuizPlay(BusinesslogicaDelegation delegate) {
         this.modules = GuiModuleDelegate.createDefault();
@@ -113,6 +140,11 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         loadThemes();
     }
 
+    /**
+     * Standardkonstruktor mit GuiModuleDelegate.
+     * 
+     * @param modules GUI- und Service-Delegation
+     */
     public ModularQuizPlay(GuiModuleDelegate modules) {
         this.modules = modules;
         this.delegate = modules.business();
@@ -122,9 +154,11 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         initUI();
         loadThemes();
     }
-    
+
+    // === INITIALISIERUNG UND LAMBDA-SETUP ===
+
     /**
-     * Initialize lambda-based operations.
+     * Initialisiert die Lambda-basierten Operationen für Fragen, Statistik und Quizabschluss.
      */
     private void initializeLambdas() {
         // Get questions for specific theme
@@ -140,7 +174,7 @@ public class ModularQuizPlay extends JPanel implements Serializable {
             }
             return questions;
         };
-        
+
         // Get all questions from all themes
         getAllQuestions = () -> {
             List<RepoQuizeeQuestions> allQuestions = new ArrayList<>();
@@ -150,57 +184,43 @@ public class ModularQuizPlay extends JPanel implements Serializable {
             }
             return allQuestions;
         };
-        
-        // Record quiz result for statistics
-        recordQuizResult = result -> {
-            // Record to internal statistics service
-            statisticsService.recordAnswer(result);
 
-            // Also record to external statistics panel if connected
+        // Record quiz result
+        recordQuizResult = result -> {
+            statisticsService.recordAnswer(result);
             if (externalStatsPanel != null) {
                 externalStatsPanel.recordAnswer(result);
             }
-
             System.out.println("Recorded: " + result.questionTitle + " -> " +
-                             (result.isCorrect ? "CORRECT" : "WRONG"));
+                               (result.isCorrect ? "CORRECT" : "WRONG"));
         };
-        
+
         // Quiz completion callback
         onQuizCompleted = () -> {
             showQuizSummary();
             statisticsService.saveStatistics();
         };
     }
-    
+
+    // === UI INITIALISIERUNG ===
+
     private void initUI() {
         setLayout(new BorderLayout(15, 15));
         setPreferredSize(new Dimension(900, 700));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // === TOP PANEL: Theme Selection (wie im Bild) ===
-        JPanel topPanel = createTopPanel();
-        add(topPanel, BorderLayout.NORTH);
+        add(createTopPanel(), BorderLayout.NORTH);
 
-        // === CENTER: Split Layout (wie im Bild) ===
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setResizeWeight(0.5);
         splitPane.setDividerSize(8);
-
-        // Left: Question and Answers
-        JPanel leftPanel = createQuestionPanel();
-        splitPane.setLeftComponent(leftPanel);
-
-        // Right: Feedback and Info
-        JPanel rightPanel = createFeedbackPanel();
-        splitPane.setRightComponent(rightPanel);
-
+        splitPane.setLeftComponent(createQuestionPanel());
+        splitPane.setRightComponent(createFeedbackPanel());
         add(splitPane, BorderLayout.CENTER);
 
-        // === BOTTOM: Controls ===
-        JPanel bottomPanel = createControlPanel();
-        add(bottomPanel, BorderLayout.SOUTH);
+        add(createControlPanel(), BorderLayout.SOUTH);
 
-        // === EVENT HANDLERS ===
+        // Event-Handler
         startQuizBtn.addActionListener(e -> startThemeQuiz());
         randomQuizBtn.addActionListener(e -> startRandomQuiz());
         leitnerQuizBtn.addActionListener(e -> startLeitnerQuiz());
@@ -209,10 +229,10 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         stopQuizBtn.addActionListener(e -> stopQuiz());
         changeThemeBtn.addActionListener(e -> changeTheme());
 
-        // Initial state
         resetQuizState();
     }
 
+    // === METHODEN FÜR UI PANEL CREATION ===
     private JPanel createTopPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Quiz Konfiguration"));
@@ -241,14 +261,17 @@ public class ModularQuizPlay extends JPanel implements Serializable {
 
         return panel;
     }
+ // === UI PANEL CREATION ===
 
+    /**
+     * Creates the question panel displaying the current question and answer options.
+     * @return JPanel the configured question panel
+     */
     private JPanel createQuestionPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createTitledBorder("Frage"));
+        panel.setBorder(BorderFactory.createTitledBorder("Question"));
 
-        // Question text area (wie im Bild)
         questionLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-        questionLabel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         questionLabel.setOpaque(true);
         questionLabel.setBackground(new Color(248, 248, 248));
         questionLabel.setBorder(BorderFactory.createCompoundBorder(
@@ -257,10 +280,8 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         ));
         panel.add(questionLabel, BorderLayout.NORTH);
 
-        // Answers section (wie im Bild)
         JPanel answersContainer = new JPanel(new BorderLayout());
-        answersContainer.setBorder(BorderFactory.createTitledBorder("Mögliche Antworten"));
-
+        answersContainer.setBorder(BorderFactory.createTitledBorder("Possible Answers"));
         answersPanel.setLayout(new GridLayout(0, 1, 5, 8));
         answersPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
@@ -268,62 +289,58 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         answersScroll.setPreferredSize(new Dimension(0, 200));
         answersScroll.setBorder(BorderFactory.createLoweredBevelBorder());
         answersContainer.add(answersScroll, BorderLayout.CENTER);
-
         panel.add(answersContainer, BorderLayout.CENTER);
 
         return panel;
     }
 
+    /**
+     * Creates the feedback panel displaying explanations and progress information.
+     * @return JPanel the configured feedback panel
+     */
     private JPanel createFeedbackPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createTitledBorder("Feedback & Information"));
 
-        // Feedback area (wie im Bild)
         feedbackLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
         feedbackLabel.setVerticalAlignment(SwingConstants.TOP);
         feedbackLabel.setHorizontalAlignment(SwingConstants.LEFT);
-        feedbackLabel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         feedbackLabel.setOpaque(true);
         feedbackLabel.setBackground(Color.WHITE);
+        feedbackLabel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         JScrollPane feedbackScroll = new JScrollPane(feedbackLabel);
-        feedbackScroll.setPreferredSize(new Dimension(0, 450)); // Vergrößert von 300 auf 450
+        feedbackScroll.setPreferredSize(new Dimension(0, 450));
         feedbackScroll.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLoweredBevelBorder(),
             BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-
         panel.add(feedbackScroll, BorderLayout.CENTER);
 
-        // Progress info
         JPanel progressPanel = new JPanel(new GridLayout(3, 1, 5, 5));
-        progressPanel.setBorder(BorderFactory.createTitledBorder("Fortschritt"));
-
-        JLabel currentQuestionLabel = new JLabel("Frage: -/-");
-        JLabel timeLabel = new JLabel("Zeit: --:--");
-        JLabel accuracyLabel = new JLabel("Genauigkeit: --%");
-
-        progressPanel.add(currentQuestionLabel);
-        progressPanel.add(timeLabel);
-        progressPanel.add(accuracyLabel);
-
+        progressPanel.setBorder(BorderFactory.createTitledBorder("Progress"));
+        progressPanel.add(new JLabel("Question: -/-"));
+        progressPanel.add(new JLabel("Time: --:--"));
+        progressPanel.add(new JLabel("Accuracy: --%"));
         panel.add(progressPanel, BorderLayout.SOUTH);
 
         return panel;
     }
 
+    /**
+     * Creates the control panel with navigation and action buttons.
+     * @return JPanel the configured control panel
+     */
     private JPanel createControlPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-
         showAnswerBtn.setPreferredSize(new Dimension(120, 35));
         nextBtn.setPreferredSize(new Dimension(120, 35));
         stopQuizBtn.setPreferredSize(new Dimension(120, 35));
         changeThemeBtn.setPreferredSize(new Dimension(120, 35));
 
-        // Style buttons
         styleButton(showAnswerBtn, new Color(70, 130, 180));
         styleButton(nextBtn, new Color(60, 179, 113));
         styleButton(stopQuizBtn, new Color(220, 53, 69));
@@ -335,10 +352,14 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         buttonPanel.add(changeThemeBtn);
 
         panel.add(buttonPanel, BorderLayout.CENTER);
-
         return panel;
     }
 
+    /**
+     * Applies a consistent style to the provided button.
+     * @param button JButton to style
+     * @param color Background color of the button
+     */
     private void styleButton(JButton button, Color color) {
         button.setBackground(color);
         button.setForeground(Color.WHITE);
@@ -346,22 +367,31 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createRaisedBevelBorder());
     }
-    
+
+    // === QUIZ LOGIC ===
+
+    /**
+     * Loads all available topics into the theme selector combobox.
+     */
     public void loadThemes() {
         themeSelector.removeAllItems();
-        themeSelector.addItem("Alle Themen");
+        themeSelector.addItem("All Topics");
         List<String> themes = delegate.getAllTopics();
-        for (String theme : themes) {
-            themeSelector.addItem(theme);
-        }
+        for (String theme : themes) themeSelector.addItem(theme);
     }
-    
+
+    /**
+     * Starts a quiz for the currently selected theme.
+     */
     private void startThemeQuiz() {
         currentTheme = (String) themeSelector.getSelectedItem();
         currentQuestions = getQuestionsForTheme.apply(currentTheme);
         startQuiz();
     }
-    
+
+    /**
+     * Starts a quiz with all questions in random order.
+     */
     private void startRandomQuiz() {
         currentTheme = "Random";
         currentQuestions = getAllQuestions.get();
@@ -370,44 +400,38 @@ public class ModularQuizPlay extends JPanel implements Serializable {
     }
 
     /**
-     * Start Leitner-based quiz with due questions prioritized.
+     * Starts the Leitner mode quiz for due questions.
      */
     private void startLeitnerQuiz() {
         String selectedTheme = (String) themeSelector.getSelectedItem();
-
-        if ("Alle Themen".equals(selectedTheme)) {
+        if ("All Topics".equals(selectedTheme)) {
             currentQuestions = leitnerSystem.getAllDueQuestions();
-            currentTheme = "Leitner-Modus (Alle Themen)";
+            currentTheme = "Leitner Mode (All Topics)";
         } else {
             currentQuestions = leitnerSystem.getDueQuestions(selectedTheme);
-            currentTheme = "Leitner-Modus (" + selectedTheme + ")";
+            currentTheme = "Leitner Mode (" + selectedTheme + ")";
         }
 
         if (currentQuestions.isEmpty()) {
-            questionLabel.setText("🎉 Keine fälligen Fragen! Alle Karten sind auf dem neuesten Stand.");
+            questionLabel.setText("🎉 No due questions!");
             JOptionPane.showMessageDialog(this,
-                "<html><h3>🎉 Gratulation!</h3>" +
-                "<p>Alle Fragen in diesem Thema sind auf dem neuesten Stand.</p>" +
-                "<p>Keine Wiederholungen fällig.</p>" +
-                "<p><i>Versuchen Sie es später wieder oder wählen Sie ein anderes Thema.</i></p></html>",
-                "Leitner-System", JOptionPane.INFORMATION_MESSAGE);
+                "<html><h3>🎉 Congratulations!</h3><p>No repetitions due.</p></html>",
+                "Leitner System", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // Show info about due questions
-        int dueCount = currentQuestions.size();
         JOptionPane.showMessageDialog(this,
-            "<html><h3>🧠 Leitner-Modus gestartet</h3>" +
-            "<p><b>" + dueCount + "</b> Fragen sind zur Wiederholung fällig.</p>" +
-            "<p>Die Fragen sind nach Priorität sortiert:</p>" +
-            "<ul><li>• Schwierige Fragen (Level 1-2) zuerst</li>" +
-            "<li>• Überfällige Fragen haben Vorrang</li>" +
-            "<li>• Adaptive Schwierigkeitsanpassung</li></ul></html>",
-            "Leitner-System", JOptionPane.INFORMATION_MESSAGE);
-
+            "<html><h3>🧠 Leitner Mode started</h3><p>" + currentQuestions.size() +
+            " questions due.</p></html>",
+            "Leitner System", JOptionPane.INFORMATION_MESSAGE);
         startQuiz();
     }
+
     
+    
+    /**
+     * Initializes the quiz state and prepares the first question.
+     */
     private void startQuiz() {
         if (currentQuestions.isEmpty()) {
             questionLabel.setText("Keine Fragen verfügbar!");
@@ -419,49 +443,45 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         correctAnswers = 0;
         answeredQuestions = 0;
         totalQuestions = currentQuestions.size();
-
-        // Start time tracking
         quizStartTime = System.currentTimeMillis();
         totalQuizTime = 0;
 
         updateScore();
         showNextQuestion();
-
         startQuizBtn.setEnabled(false);
         randomQuizBtn.setEnabled(false);
         themeSelector.setEnabled(false);
     }
+
     
+    
+    
+    
+    
+    /**
+     * Displays the next question in the quiz.
+     */
     private void showNextQuestion() {
         currentIndex++;
-
         if (currentIndex >= currentQuestions.size()) {
             onQuizCompleted.run();
             return;
         }
 
-        // Reset question state
-        selectedAnswer = null;
-        questionAnswered = false;
-
         RepoQuizeeQuestions question = currentQuestions.get(currentIndex);
         selectedAnswer = null;
         answerShown = false;
-
-        // Start timing for this question
+        questionAnswered = false;
         questionStartTime = System.currentTimeMillis();
 
-        // Display question
         questionLabel.setText((currentIndex + 1) + ". " + question.getFrageText());
         feedbackLabel.setText("");
-        
-        // Create answer options
         answersPanel.removeAll();
         ButtonGroup group = new ButtonGroup();
 
         List<String> answers = question.getAntworten();
         Collections.shuffle(answers);
-        
+
         for (String answer : answers) {
             JRadioButton btn = new JRadioButton(answer);
             group.add(btn);
@@ -471,22 +491,15 @@ public class ModularQuizPlay extends JPanel implements Serializable {
                 selectedAnswer = answer;
                 checkAnswer(question);
 
-                // Automatisches Fortfahren nach Antwort
                 javax.swing.Timer timer = new javax.swing.Timer(2000, evt -> {
-                    if (currentIndex < currentQuestions.size() - 1) {
-                        showNextQuestion();
-                    } else {
-                        showQuizSummary();
-                    }
+                    if (currentIndex < currentQuestions.size() - 1) showNextQuestion();
+                    else showQuizSummary();
                 });
                 timer.setRepeats(false);
                 timer.start();
 
-                // Disable all buttons after selection
                 for (Component comp : answersPanel.getComponents()) {
-                    if (comp instanceof JRadioButton) {
-                        comp.setEnabled(false);
-                    }
+                    if (comp instanceof JRadioButton) ((JRadioButton) comp).setEnabled(false);
                 }
             });
         }
@@ -495,23 +508,24 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         showAnswerBtn.setEnabled(true);
         stopQuizBtn.setEnabled(true);
         changeThemeBtn.setEnabled(false);
-        
+
         revalidate();
         repaint();
     }
+
     
+    /**
+     * Checks the selected answer for correctness and updates feedback.
+     */
     private void checkAnswer(RepoQuizeeQuestions question) {
         if (selectedAnswer == null || questionAnswered) return;
-
         questionAnswered = true;
         answeredQuestions++;
-
         String allCorrectAnswers = getCorrectAnswer(question);
         boolean isCorrect = isAnswerCorrect(question, selectedAnswer);
         String explanation = question.getErklaerung();
 
         StringBuilder feedback = new StringBuilder();
-
         if (isCorrect) {
             correctAnswers++;
             feedback.append("✅ Richtig!");
@@ -521,17 +535,13 @@ public class ModularQuizPlay extends JPanel implements Serializable {
             feedbackLabel.setForeground(Color.RED);
         }
 
-        // Add explanation if available
         if (explanation != null && !explanation.trim().isEmpty()) {
             feedback.append("\n\n💡 Erklärung:\n").append(explanation);
         }
 
         feedbackLabel.setText("<html>" + feedback.toString().replace("\n", "<br>") + "</html>");
-
-        // Calculate answer time
         long answerTime = System.currentTimeMillis() - questionStartTime;
 
-        // Record result for statistics (only if answered)
         recordQuizResult.accept(new QuizResult(
             currentTheme,
             question.getTitel(),
@@ -545,76 +555,86 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         nextBtn.setEnabled(true);
         showAnswerBtn.setEnabled(false);
     }
+
     
+    /**
+     * Reveals the correct answer for the current question.
+     */
     private void showCorrectAnswer() {
         if (currentIndex < 0 || currentIndex >= currentQuestions.size()) return;
-        
         RepoQuizeeQuestions question = currentQuestions.get(currentIndex);
         String correctAnswer = getCorrectAnswer(question);
-        
         feedbackLabel.setText("💡 Richtige Antwort: " + correctAnswer);
         feedbackLabel.setForeground(Color.BLUE);
-        
         answerShown = true;
         nextBtn.setEnabled(true);
         showAnswerBtn.setEnabled(false);
     }
+
     
+    /**
+     * Returns the correct answer(s) for a given question.
+     * @param question The question to evaluate
+     * @return String representation of correct answer(s)
+     */
     private String getCorrectAnswer(RepoQuizeeQuestions question) {
         List<String> answers = question.getAntworten();
         List<Boolean> correct = question.getKorrekt();
         List<String> correctAnswers = new ArrayList<>();
-
         for (int i = 0; i < answers.size() && i < correct.size(); i++) {
-            if (Boolean.TRUE.equals(correct.get(i))) {
-                correctAnswers.add(answers.get(i));
-            }
+            if (Boolean.TRUE.equals(correct.get(i))) correctAnswers.add(answers.get(i));
         }
-
-        if (correctAnswers.isEmpty()) {
-            return !answers.isEmpty() ? answers.get(0) : "Keine Antwort";
-        } else if (correctAnswers.size() == 1) {
-            return correctAnswers.get(0);
-        } else {
-            return String.join(", ", correctAnswers);
-        }
+        if (correctAnswers.isEmpty()) return !answers.isEmpty() ? answers.get(0) : "Keine Antwort";
+        else if (correctAnswers.size() == 1) return correctAnswers.get(0);
+        else return String.join(", ", correctAnswers);
     }
 
+    /**
+     * Determines if the selected answer is correct.
+     * @param question The question being answered
+     * @param selectedAnswer The answer selected by the user
+     * @return true if correct, false otherwise
+     */
     private boolean isAnswerCorrect(RepoQuizeeQuestions question, String selectedAnswer) {
         List<String> answers = question.getAntworten();
         List<Boolean> correct = question.getKorrekt();
-
         for (int i = 0; i < answers.size() && i < correct.size(); i++) {
-            if (answers.get(i).equals(selectedAnswer) && Boolean.TRUE.equals(correct.get(i))) {
-                return true;
-            }
+            if (answers.get(i).equals(selectedAnswer) && Boolean.TRUE.equals(correct.get(i))) return true;
         }
         return false;
     }
-    
+
+    /**
+     * Updates the displayed quiz score.
+     */
     private void updateScore() {
         scoreLabel.setText("Score: " + correctAnswers + "/" + answeredQuestions);
     }
 
+    
+    /**
+     * Shows a summary at the end of the quiz.
+     */
     private void showQuizSummary() {
         questionLabel.setText("Quiz beendet!");
         answersPanel.removeAll();
-
-        // Only consider answered questions for statistics
         double percentage = answeredQuestions > 0 ? (correctAnswers * 100.0 / answeredQuestions) : 0;
         String summary = String.format(
             "Ergebnis: %d/%d richtig (%.1f%%)\nThema: %s\nBeantwortete Fragen: %d von %d",
             correctAnswers, answeredQuestions, percentage, currentTheme, answeredQuestions, totalQuestions
         );
-
         feedbackLabel.setText("<html>" + summary.replace("\n", "<br>") + "</html>");
         feedbackLabel.setForeground(percentage >= 70 ? Color.GREEN : Color.ORANGE);
-
         resetQuizState();
         revalidate();
         repaint();
     }
+
     
+    
+    /**
+     * Resets the quiz UI and internal state.
+     */
     private void resetQuizState() {
         startQuizBtn.setEnabled(true);
         randomQuizBtn.setEnabled(true);
@@ -625,6 +645,11 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         changeThemeBtn.setEnabled(true);
     }
 
+    
+    
+    /**
+     * Stops the quiz and confirms with the user.
+     */
     private void stopQuiz() {
         int choice = JOptionPane.showConfirmDialog(
             this,
@@ -633,7 +658,6 @@ public class ModularQuizPlay extends JPanel implements Serializable {
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
-
         if (choice == JOptionPane.YES_OPTION) {
             resetQuizState();
             questionLabel.setText("Quiz beendet. Wählen Sie ein neues Thema.");
@@ -644,13 +668,14 @@ public class ModularQuizPlay extends JPanel implements Serializable {
         }
     }
 
+    /**
+     * Allows the user to change the quiz theme, resetting the current quiz.
+     */
     private void changeTheme() {
         if (currentQuestions.isEmpty()) {
-            // No quiz running, just show message
             feedbackLabel.setText("Wählen Sie ein neues Thema und starten Sie das Quiz");
             return;
         }
-
         int choice = JOptionPane.showConfirmDialog(
             this,
             "Möchten Sie das Thema wechseln?\nDas aktuelle Quiz wird beendet.",
@@ -658,7 +683,6 @@ public class ModularQuizPlay extends JPanel implements Serializable {
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
-
         if (choice == JOptionPane.YES_OPTION) {
             resetQuizState();
             questionLabel.setText("Wählen Sie ein neues Thema und starten Sie das Quiz");
@@ -668,21 +692,20 @@ public class ModularQuizPlay extends JPanel implements Serializable {
             answersPanel.repaint();
         }
     }
-    
+
     /**
-     * Get statistics service for external access.
+     * Returns the internal statistics service.
+     * @return ModularQuizStatistics instance
      */
     public ModularQuizStatistics getStatisticsService() {
         return statisticsService;
     }
 
     /**
-     * Set external statistics service (for integration with ModularStatisticsPanel).
+     * Sets an external statistics panel for integration.
+     * @param externalStatsPanel Panel for statistics integration
      */
     public void setStatisticsService(ModularStatisticsPanel externalStatsPanel) {
         this.externalStatsPanel = externalStatsPanel;
     }
-
-    // External statistics panel for data transfer
-    private ModularStatisticsPanel externalStatsPanel;
 }

@@ -16,10 +16,10 @@ import java.util.stream.Collectors;
  * - Lambda-based data processing
  * - Functional composition for complex queries
  * 
-<<<<<<< HEAD
+ * 
  * @author D.Georgiou
  * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
+ * 
  */
 public class ModularQuizStatistics implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -95,14 +95,15 @@ public class ModularQuizStatistics implements Serializable {
     public static class ThemeStatistics implements Serializable {
         private static final long serialVersionUID = 1L;
         
-        public final String themeName;
+        public final String name;
         public int totalQuestions = 0;
         public int totalAttempts = 0;
         public int correctAttempts = 0;
         public long lastPlayed = 0;
+
         
-        public ThemeStatistics(String themeName) {
-            this.themeName = themeName;
+        public ThemeStatistics(String name) {
+            this.name = name;
         }
         
         public double getSuccessRate() {
@@ -367,7 +368,7 @@ public class ModularQuizStatistics implements Serializable {
             for (Object src : tsMap.values()) {
                 ThemeStatistics dst = convertPanelThemeStats(src);
                 if (dst != null) {
-                    themeStats.put(dst.themeName, dst);
+                    themeStats.put(dst.name, dst);
                 }
             }
         }
@@ -415,7 +416,7 @@ public class ModularQuizStatistics implements Serializable {
             for (Object src : tsMap.values()) {
                 ThemeStatistics dst = convertPanelThemeStats(src);
                 if (dst != null) {
-                    themeStats.put(dst.themeName, dst);
+                    themeStats.put(dst.name, dst);
                 }
             }
         }

@@ -5,130 +5,90 @@ import java.util.function.*;
 
 /**
  * Functional delegation interface for GUI operations.
+ * <p>
+ * Responsibilities:
+ * <ul>
+ *   <li>Provides lambda-based contracts for all GUI interactions.</li>
+ *   <li>Ensures complete separation between GUI components and business logic.</li>
+ *   <li>Supports reactive programming and event-driven patterns via callbacks.</li>
+ *   <li>Encapsulates CRUD operations for Forms, Lists, Buttons, and Panels.</li>
+ *   <li>Designed for Themes, Questions, Leitner Cards, and Session management.</li>
+ * </ul>
+ * <p>
+ * Key Principles:
+ * <ul>
+ *   <li>No direct GUI component references in business logic.</li>
+ *   <li>All interactions via functional interfaces (Supplier, Consumer, Function, Runnable).</li>
+ *   <li>Fully compatible with modular, lambda-driven orchestration.</li>
+ * </ul>
  * 
- * This interface provides lambda-based contracts for all GUI interactions,
- * enabling complete separation between GUI components and business logic.
- * 
- * Key principles:
- * - No direct GUI component references in business logic
- * - All interactions through functional interfaces
- * - Support for reactive programming patterns
- * - Event-driven architecture with callbacks
- * 
-<<<<<<< HEAD
- * @author D.Georgiou
+ * @author D.
  * @version 1.0
-=======
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public interface GuiDelegate {
-    
+
     // === FORM OPERATIONS ===
-    
-    /**
-     * Lambda for form data collection.
-     * Supplier returns current form data.
-     */
+
+    /** Supplier returning current form data. */
     Supplier<FormData> collectFormData();
-    
-    /**
-     * Lambda for form population.
-     * Consumer receives data to populate form with.
-     */
+
+    /** Consumer populating form with given data. */
     Consumer<FormData> populateForm();
-    
-    /**
-     * Lambda for form validation.
-     * Function takes form data and returns validation result.
-     */
+
+    /** Function validating the form and returning a ValidationResult. */
     Function<FormData, ValidationResult> validateForm();
-    
-    /**
-     * Lambda for form clearing.
-     * Runnable clears all form fields.
-     */
+
+    /** Runnable that clears all form fields. */
     Runnable clearForm();
-    
+
     // === MESSAGE OPERATIONS ===
-    
-    /**
-     * Lambda for displaying messages.
-     * Consumer receives message data.
-     */
+
+    /** Consumer that displays messages with MessageData. */
     Consumer<MessageData> showMessage();
-    
-    /**
-     * Lambda for confirmation dialogs.
-     * Function takes message and returns user choice.
-     */
+
+    /** Function that shows a confirmation dialog and returns user choice. */
     Function<String, Boolean> showConfirmation();
-    
-    /**
-     * Lambda for error display.
-     * Consumer receives error information.
-     */
+
+    /** Consumer that displays errors with ErrorData. */
     Consumer<ErrorData> showError();
-    
+
     // === LIST OPERATIONS ===
-    
-    /**
-     * Lambda for list updates.
-     * Consumer receives new list data.
-     */
+
+    /** Consumer that updates a list with new data. */
     Consumer<List<String>> updateList();
-    
-    /**
-     * Lambda for list selection.
-     * Supplier returns currently selected item.
-     */
+
+    /** Supplier returning currently selected item in a list. */
     Supplier<String> getSelectedItem();
-    
-    /**
-     * Lambda for list selection changes.
-     * Consumer receives selection change events.
-     */
+
+    /** Consumer that receives list selection change events. */
     Consumer<SelectionEvent> onSelectionChanged();
-    
+
     // === BUTTON OPERATIONS ===
-    
-    /**
-     * Lambda for button actions.
-     * Runnable executes when button is clicked.
-     */
+
+    /** Runnable invoked when a button is clicked. */
     Runnable onButtonClick();
-    
-    /**
-     * Lambda for button state changes.
-     * Consumer receives button state data.
-     */
+
+    /** Consumer to update button state (enabled, text, tooltip). */
     Consumer<ButtonState> setButtonState();
-    
+
     // === NAVIGATION OPERATIONS ===
-    
-    /**
-     * Lambda for tab switching.
-     * Consumer receives target tab identifier.
-     */
+
+    /** Consumer to switch to a different tab. */
     Consumer<String> switchToTab();
-    
-    /**
-     * Lambda for panel updates.
-     * Consumer receives panel update data.
-     */
+
+    /** Consumer to update a panel with data. */
     Consumer<PanelUpdateData> updatePanel();
-    
+
     // === DATA TRANSFER OBJECTS ===
-    
-    /**
-     * Generic form data container.
-     */
+
+    /** Form data container used for Questions, Cards, and Sessions. */
     class FormData {
         public final String title;
         public final String content;
         public final List<String> options;
         public final List<Boolean> flags;
         public final long timestamp;
-        
+
         public FormData(String title, String content, List<String> options, List<Boolean> flags) {
             this.title = title;
             this.content = content;
@@ -137,50 +97,42 @@ public interface GuiDelegate {
             this.timestamp = System.currentTimeMillis();
         }
     }
-    
-    /**
-     * Validation result container.
-     */
+
+    /** Validation result container with status and error messages. */
     class ValidationResult {
         public final boolean isValid;
         public final List<String> errors;
         public final String summary;
-        
+
         public ValidationResult(boolean isValid, List<String> errors, String summary) {
             this.isValid = isValid;
             this.errors = errors;
             this.summary = summary;
         }
     }
-    
-    /**
-     * Message display data.
-     */
+
+    /** Message display container for info, success, warning, or error messages. */
     class MessageData {
         public final String text;
         public final MessageType type;
         public final int duration; // milliseconds
-        
+
         public MessageData(String text, MessageType type, int duration) {
             this.text = text;
             this.type = type;
             this.duration = duration;
         }
-        
-        public enum MessageType {
-            INFO, SUCCESS, WARNING, ERROR
-        }
+
+        public enum MessageType { INFO, SUCCESS, WARNING, ERROR }
     }
-    
-    /**
-     * Error display data.
-     */
+
+    /** Error display container with optional throwable and detail toggle. */
     class ErrorData {
         public final String title;
         public final String message;
         public final Throwable cause;
         public final boolean showDetails;
-        
+
         public ErrorData(String title, String message, Throwable cause, boolean showDetails) {
             this.title = title;
             this.message = message;
@@ -188,16 +140,14 @@ public interface GuiDelegate {
             this.showDetails = showDetails;
         }
     }
-    
-    /**
-     * Selection change event.
-     */
+
+    /** List selection change event container. */
     class SelectionEvent {
         public final String previousSelection;
         public final String currentSelection;
         public final int index;
         public final long timestamp;
-        
+
         public SelectionEvent(String previousSelection, String currentSelection, int index) {
             this.previousSelection = previousSelection;
             this.currentSelection = currentSelection;
@@ -205,38 +155,32 @@ public interface GuiDelegate {
             this.timestamp = System.currentTimeMillis();
         }
     }
-    
-    /**
-     * Button state data.
-     */
+
+    /** Button state container (enabled status, text, tooltip). */
     class ButtonState {
         public final boolean enabled;
         public final String text;
         public final String tooltip;
-        
+
         public ButtonState(boolean enabled, String text, String tooltip) {
             this.enabled = enabled;
             this.text = text;
             this.tooltip = tooltip;
         }
     }
-    
-    /**
-     * Panel update data.
-     */
+
+    /** Panel update container for refresh, clear, populate, or validate operations. */
     class PanelUpdateData {
         public final String panelId;
         public final Object data;
         public final UpdateType type;
-        
+
         public PanelUpdateData(String panelId, Object data, UpdateType type) {
             this.panelId = panelId;
             this.data = data;
             this.type = type;
         }
-        
-        public enum UpdateType {
-            REFRESH, CLEAR, POPULATE, VALIDATE
-        }
+
+        public enum UpdateType { REFRESH, CLEAR, POPULATE, VALIDATE }
     }
 }

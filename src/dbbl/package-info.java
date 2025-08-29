@@ -24,7 +24,7 @@
  *
  * Thread-Sicherheit:
  * - Kernsammlungen verwenden ConcurrentHashMap; Schreibvorgänge erfolgen sequentiell
- *   über Lambda-Pipelines. Snapshot-Schreiben erfolgt atomar.
+ *   über Lambda-Pipelines.(Sodass es die Datenbank nicht dauerhaft geöffnet ist und nur bei nutzung) Snapshot-Schreiben erfolgt atomar.
  *
  * Beispielnutzung:
  * <pre>

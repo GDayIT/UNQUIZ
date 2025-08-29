@@ -13,67 +13,117 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 /**
- * Statistics Panel with Karteikarten-System (Spaced Repetition).
- * 
- * Features:
- * - Overall quiz statistics
- * - Theme-based performance analysis
- * - Karteikarten system with color-coded levels (1=green, 6=red)
- * - Questions needing practice identification
- * - Lambda-based data processing
- * - Modular and delegated architecture
- * 
-<<<<<<< HEAD
- * @author D.Georgiou
+ * Statistics JPanel providing comprehensive quiz and theme performance overview.
+ *
+ * <p>Features include:
+ * <ul>
+ *     <li>Overall quiz statistics (total questions, correct/wrong answers, success rate)</li>
+ *     <li>Theme-specific statistics (attempts, correct, success rate)</li>
+ *     <li>Karteikarten system (Spaced repetition) with color-coded levels (1=green, 6=red)</li>
+ *     <li>Identification of questions requiring additional practice</li>
+ *     <li>Lambda-based data filtering for existing content</li>
+ *     <li>Modular design with delegated services for statistics and backend access</li>
+ * </ul>
+ * </p>
+ *
+ * <p>Dependencies and Relationships:
+ * <ul>
+ *     <li>BusinesslogicaDelegation – fetches themes and questions</li>
+ *     <li>ModularQuizStatistics – provides core statistics, theme/question data, and Karteikarten levels</li>
+ * </ul>
+ * </p>
+ *
+ * <p>This panel automatically refreshes and filters all statistics to include only
+ * content that exists in the backend database (themes and questions).</p>
+ *
+ * @author D.
  * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public class Statistics extends JPanel implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    // --- Dependencies ---
+    /** Backend delegate for theme and question operations */
     private final BusinesslogicaDelegation delegate;
+
+    /** Service providing statistics for themes, questions, and Karteikarten */
     private ModularQuizStatistics statisticsService;
-    
-    // UI Components
+
+    // --- UI Components ---
+    /** Label displaying overall statistics */
     private final JLabel overallStatsLabel = new JLabel();
+
+    /** Panel containing the Karteikarten system overview */
     private final JPanel karteikartenPanel = new JPanel();
+
+    /** Panel containing theme-specific statistics */
     private final JPanel themeStatsPanel = new JPanel();
+
+    /** Scroll pane wrapping the Karteikarten panel */
     private final JScrollPane karteikartenScrollPane;
+
+    /** Scroll pane wrapping the theme statistics panel */
     private final JScrollPane themeScrollPane;
+
+    /** Button to refresh statistics display */
     private final JButton refreshBtn = new JButton("Aktualisieren");
+
+    /** Button to reset all statistics */
     private final JButton resetStatsBtn = new JButton("Statistiken zurücksetzen");
+
+    /** Button to show settings dialog */
     private final JButton settingsBtn = new JButton("⚙️ Einstellungen");
-    
-    // Lambda-based operations
+
+    // --- Lambda-based data operations ---
+    /** Supplier for overall statistics map */
     private Supplier<Map<String, Object>> getOverallStats;
+
+    /** Supplier for theme statistics collection */
     private Supplier<Collection<ThemeStatistics>> getThemeStats;
+
+    /** Supplier for question statistics collection */
     private Supplier<Collection<QuestionStatistics>> getQuestionStats;
+
+    /** Function returning question titles for a given Karteikarten level */
     private Function<Integer, List<String>> getQuestionsByLevel;
+
+    /** Supplier for questions requiring additional practice */
     private Supplier<List<String>> getQuestionsNeedingPractice;
+
+    /** Runnable to refresh the display panels */
     private Runnable refreshDisplay;
 
+    /**
+     * Constructor initializing the statistics panel.
+     * Initializes UI, scroll panes, and lambda-based data operations.
+     *
+     * @param delegate backend delegate providing theme and question access
+     */
     public Statistics(BusinesslogicaDelegation delegate) {
         this.delegate = delegate;
-        
-        // Initialize scroll panes
         karteikartenScrollPane = new JScrollPane(karteikartenPanel);
         themeScrollPane = new JScrollPane(themeStatsPanel);
-        
         initializeLambdas();
         initUI();
     }
-    
+
     /**
-     * Set the statistics service (called from main application).
+     * Sets the statistics service and refreshes display.
+     *
+     * @param statisticsService the modular statistics service instance
      */
     public void setStatisticsService(ModularQuizStatistics statisticsService) {
         this.statisticsService = statisticsService;
         initializeLambdas();
         refreshDisplay.run();
     }
-    
+
     /**
-     * Initialize lambda-based operations with strict validation.
+     * Initializes all lambda-based operations for filtering, sorting, and fetching
+     * statistics.
+     *
+     * <p>If the statistics service is null, default empty operations are used.
+     * Otherwise, lambdas fetch only existing content.</p>
      */
     private void initializeLambdas() {
         if (statisticsService == null) {
@@ -98,7 +148,7 @@ public class Statistics extends JPanel implements Serializable {
             Collection<ThemeStatistics> allStats = statisticsService.getThemeStatistics();
             List<String> existingThemes = delegate.getAllTopics();
             return allStats.stream()
-                .filter(stat -> existingThemes.contains(stat.themeName))
+                .filter(stat -> existingThemes.contains(stat.name))
                 .filter(stat -> stat.totalAttempts > 0) // Only themes that were actually played
                 .collect(java.util.stream.Collectors.toList());
         };
@@ -483,7 +533,7 @@ public class Statistics extends JPanel implements Serializable {
         // Filter statistics to only show themes that actually exist in the system
         List<String> existingThemes = delegate.getAllTopics();
         List<ThemeStatistics> validThemeStats = allThemeStats.stream()
-            .filter(stats -> existingThemes.contains(stats.themeName))
+            .filter(stats -> existingThemes.contains(stats.name))
             .filter(stats -> stats.totalAttempts > 0) // Only show themes that have been played
             .collect(java.util.stream.Collectors.toList());
 
@@ -517,7 +567,7 @@ public class Statistics extends JPanel implements Serializable {
     
     private JPanel createThemeStatsPanel(ThemeStatistics stats) {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(stats.themeName));
+        panel.setBorder(BorderFactory.createTitledBorder(stats.name));
         
         String statsText = String.format(
             "<html>" +

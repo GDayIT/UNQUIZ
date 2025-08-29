@@ -1,67 +1,82 @@
 package guimodule;
 
 import dbbl.BusinesslogicaDelegation;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.Timer;
+import javax.swing.*;
 
 /**
- * Question form panel (title, question text, answers, correct flags) using pure delegation.
- *
- * Responsibilities:
- * - Captures form input for a quiz question (title, text, answers, correctness flags)
- * - Exposes clearForm() and setFormData(QuizQuestion) for orchestration from outside
- * - Delegates save/delete operations via BusinesslogicaDelegation using callbacks/lambdas
- *
- * Interaction model:
- * - The panel depends only on the BusinesslogicaDelegation boundary and on
- *   small functional callbacks provided by its parent/orchestrator.
- * - No direct references to controllers or other UI components exist.
-<<<<<<< HEAD
+ * Panel for creating and editing quiz questions with full form input.
  * 
- * @author D.Georgiou
- * @version 1.0 
-=======
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
+ * Responsibilities:
+ * - Captures user input for quiz question: title, question text, explanation, answers, correctness flags.
+ * - Exposes clearForm() and setFormData() methods for external orchestration.
+ * - Delegates save and delete operations to BusinesslogicaDelegation.
+ * - Displays inline messages for success, errors, and form state feedback.
+ * 
+ * Design considerations:
+ * - Pure delegation: all persistence operations are handled externally.
+ * - Functional callbacks: Runnables and Suppliers provide decoupled orchestration.
+ * - Swing UI components are organized with layouts for flexible resizing and alignment.
+ * 
+ * Dependencies:
+ * - BusinesslogicaDelegation: for save/delete operations.
+ * - QuizQuestion: data object representing a quiz question.
+ * - Standard Swing components (JTextField, JTextArea, JCheckBox, JLabel, JButton, JPanel).
+ * 
+ * @author D.
+ * @version 1.0
  */
 public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    /** Delegate for handling persistence operations */
     private final BusinesslogicaDelegation delegate;
+
+    /** Provides the currently selected topic */
     private final Supplier<String> currentTopicSupplier;
+
+    /** Callback invoked after successful save */
     private final Runnable onSaved;
+
+    /** Callback invoked after successful deletion */
     private final Runnable onDeleted;
+
+    /** Provides currently selected question index */
     private final IntSupplier selectedIndexSupplier;
 
+    /** Text field for question title */
     private final JTextField titelField;
+
+    /** Text area for question body */
     private final JTextArea frageArea;
+
+    /** Text area for optional explanation */
     private final JTextArea erklaerungArea;
+
+    /** Text fields for up to 4 answer options */
     private final JTextField[] antwortFields = new JTextField[4];
+
+    /** Checkboxes to mark correct answers */
     private final JCheckBox[] correctBoxes = new JCheckBox[4];
+
+    /** Label to display messages (success, error, info) */
     private final JLabel messageLabel = new JLabel(" ");
 
+    /**
+     * Constructor with full functional delegation.
+     * Initializes UI, sets up input fields, buttons, and message label.
+     * 
+     * @param delegate handles save/delete operations
+     * @param currentTopicSupplier provides currently selected topic
+     * @param onSaved callback invoked after save
+     * @param onDeleted callback invoked after delete
+     * @param selectedIndexSupplier provides selected question index
+     */
     public CreateQuizQuestionsPanel(
         BusinesslogicaDelegation delegate,
         Supplier<String> currentTopicSupplier,
@@ -78,22 +93,22 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Create/Edit Quiz Question"));
 
-        // Setup message label
+        // Message label configuration
         messageLabel.setForeground(Color.BLUE);
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
-        leftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 30)); // Increased bottom margin
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 30));
 
-        // Title
+        // Title field setup
         titelField = new JTextField(20);
         titelField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
         leftPanel.add(new JLabel("Title"));
         leftPanel.add(titelField);
         leftPanel.add(Box.createVerticalStrut(10));
 
-        // Question
+        // Question text area setup
         frageArea = new JTextArea(5, 20);
         frageArea.setLineWrap(true);
         frageArea.setWrapStyleWord(true);
@@ -103,7 +118,7 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
         leftPanel.add(frageScroll);
         leftPanel.add(Box.createVerticalStrut(10));
 
-        // Explanation
+        // Optional explanation setup
         erklaerungArea = new JTextArea(3, 20);
         erklaerungArea.setLineWrap(true);
         erklaerungArea.setWrapStyleWord(true);
@@ -111,19 +126,18 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
         erklaerungScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
         leftPanel.add(new JLabel("Erklärung (optional)"));
         leftPanel.add(erklaerungScroll);
-        leftPanel.add(Box.createVerticalStrut(20)); // Increased spacing
+        leftPanel.add(Box.createVerticalStrut(20));
 
-        // Answers section with headers
+        // Answer fields with headers
         JPanel antwortPanel = new JPanel(new GridBagLayout());
 
-        // Add column headers
         GridBagConstraints headerConstraints = new GridBagConstraints();
         headerConstraints.insets = new Insets(5, 0, 10, 5);
         headerConstraints.gridy = 0;
 
         headerConstraints.gridx = 0;
         headerConstraints.anchor = GridBagConstraints.WEST;
-        antwortPanel.add(new JLabel(""), headerConstraints); // Empty for answer number column
+        antwortPanel.add(new JLabel(""), headerConstraints);
 
         headerConstraints.gridx = 1;
         headerConstraints.anchor = GridBagConstraints.CENTER;
@@ -137,11 +151,11 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
         correctLabel.setFont(correctLabel.getFont().deriveFont(Font.BOLD));
         antwortPanel.add(correctLabel, headerConstraints);
 
-        // Add answer fields
+        // Answer input rows
         for (int i = 0; i < 4; i++) {
             GridBagConstraints c = new GridBagConstraints();
             c.insets = new Insets(3, 0, 3, 5);
-            c.gridy = i + 1; // Start from row 1 (after headers)
+            c.gridy = i + 1; // offset for header
             c.gridx = 0;
             c.anchor = GridBagConstraints.WEST;
             antwortPanel.add(new JLabel("Answer " + (i + 1)), c);
@@ -161,46 +175,15 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
             antwortPanel.add(correctBoxes[i], c);
         }
         leftPanel.add(antwortPanel);
-        leftPanel.add(Box.createVerticalStrut(20)); // Increased spacing
+        leftPanel.add(Box.createVerticalStrut(20));
 
-        // Buttons with improved layout
+        // Buttons panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
         JButton saveBtn = new JButton("Save Question");
         JButton deleteBtn = new JButton("Delete Question");
 
-        saveBtn.addActionListener(e -> {
-            String topic = currentTopicSupplier != null ? currentTopicSupplier.get() : null;
-            if (topic == null || topic.isBlank()) {
-                showMessage("Bitte wählen Sie zuerst ein Thema aus!", Color.RED);
-                return;
-            }
-
-            var data = collectFormData();
-            if (data.title.trim().isEmpty()) {
-                showMessage("Bitte geben Sie einen Titel ein!", Color.RED);
-                return;
-            }
-            if (data.text.trim().isEmpty()) {
-                showMessage("Bitte geben Sie eine Frage ein!", Color.RED);
-                return;
-            }
-
-            delegate.saveQuestion(topic, data.title, data.text, data.explanation, data.answers, data.correct);
-            showMessage("Frage '" + data.title + "' erfolgreich gespeichert!", Color.GREEN);
-            onSaved.run();
-        });
-
-        deleteBtn.addActionListener(e -> {
-            String topic = currentTopicSupplier != null ? currentTopicSupplier.get() : null;
-            int idx = selectedIndexSupplier.getAsInt();
-            if (topic == null || idx < 0) {
-                showMessage("Bitte wählen Sie eine Frage zum Löschen aus!", Color.RED);
-                return;
-            }
-            delegate.deleteQuestion(topic, idx);
-            showMessage("Frage erfolgreich gelöscht!", Color.GREEN);
-            onDeleted.run();
-        });
+        saveBtn.addActionListener(e -> saveQuestion());
+        deleteBtn.addActionListener(e -> deleteQuestion());
 
         buttonPanel.add(saveBtn);
         buttonPanel.add(deleteBtn);
@@ -209,13 +192,16 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(messageLabel, BorderLayout.NORTH);
         bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 30, 0)); // 30px bottom margin
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 30, 0));
 
         leftPanel.add(bottomPanel);
-
         add(leftPanel, BorderLayout.CENTER);
     }
 
+    /**
+     * Collects form data into a structured object.
+     * @return FormData object containing title, text, explanation, answers, and correctness flags
+     */
     private FormData collectFormData() {
         String titel = titelField.getText();
         String frage = frageArea.getText();
@@ -229,7 +215,7 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
         return new FormData(titel, frage, erklaerung, answers, correct);
     }
 
-    /** Clears all input fields (title, question, explanation, answers, flags). */
+    /** Clears all form fields, resets checkboxes, and shows info message */
     public void clearForm() {
         titelField.setText("");
         frageArea.setText("");
@@ -238,10 +224,10 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
             antwortFields[i].setText("");
             correctBoxes[i].setSelected(false);
         }
-        showMessage("Formular bereinigt - bereit für neue Frage", Color.BLUE);
+        showMessage("Form cleared - ready for new question", Color.BLUE);
     }
 
-    /** Fills the form with the provided question data. */
+    /** Populates form fields with provided QuizQuestion data */
     public void setFormData(QuizQuestion q) {
         if (q == null) { clearForm(); return; }
         titelField.setText(q.getTitel());
@@ -253,14 +239,13 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
             antwortFields[i].setText(i < antworten.size() ? antworten.get(i) : "");
             correctBoxes[i].setSelected(i < korrekt.size() && Boolean.TRUE.equals(korrekt.get(i)));
         }
-        showMessage("Frage '" + q.getTitel() + "' geladen", Color.BLUE);
+        showMessage("Question '" + q.getTitel() + "' loaded", Color.BLUE);
     }
 
+    /** Displays a message in the panel, auto-clears after 3 seconds */
     private void showMessage(String message, Color color) {
         messageLabel.setText(message);
         messageLabel.setForeground(color);
-
-        // Clear message after 3 seconds
         Timer timer = new Timer(3000, e -> {
             messageLabel.setText(" ");
             messageLabel.setForeground(Color.BLACK);
@@ -269,11 +254,55 @@ public class CreateQuizQuestionsPanel extends JPanel implements Serializable {
         timer.start();
     }
 
-    // Helper DTO
+    /** Handles saving question via delegate with validation */
+    private void saveQuestion() {
+        String topic = currentTopicSupplier != null ? currentTopicSupplier.get() : null;
+        if (topic == null || topic.isBlank()) {
+            showMessage("Please select a topic first!", Color.RED);
+            return;
+        }
+
+        var data = collectFormData();
+        if (data.title.trim().isEmpty()) {
+            showMessage("Please enter a title!", Color.RED);
+            return;
+        }
+        if (data.text.trim().isEmpty()) {
+            showMessage("Please enter a question!", Color.RED);
+            return;
+        }
+
+        delegate.saveQuestion(topic, data.title, data.text, data.explanation, data.answers, data.correct);
+        showMessage("Question '" + data.title + "' saved successfully!", Color.GREEN);
+        onSaved.run();
+    }
+
+    /** Handles deleting question via delegate */
+    private void deleteQuestion() {
+        String topic = currentTopicSupplier != null ? currentTopicSupplier.get() : null;
+        int idx = selectedIndexSupplier.getAsInt();
+        if (topic == null || idx < 0) {
+            showMessage("Please select a question to delete!", Color.RED);
+            return;
+        }
+        delegate.deleteQuestion(topic, idx);
+        showMessage("Question deleted successfully!", Color.GREEN);
+        onDeleted.run();
+    }
+
+    /** Internal DTO for capturing form data */
     private static class FormData {
-        final String title; final String text; final String explanation; final List<String> answers; final List<Boolean> correct;
+        final String title;
+        final String text;
+        final String explanation;
+        final List<String> answers;
+        final List<Boolean> correct;
         FormData(String title, String text, String explanation, List<String> answers, List<Boolean> correct) {
-            this.title = title; this.text = text; this.explanation = explanation; this.answers = answers; this.correct = correct;
+            this.title = title;
+            this.text = text;
+            this.explanation = explanation;
+            this.answers = answers;
+            this.correct = correct;
         }
     }
 }

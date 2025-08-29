@@ -6,44 +6,61 @@ import java.util.List;
 import java.util.function.*;
 
 /**
- * Modular sorting delegation interface using lambda expressions.
+ * Modular sorting and filtering delegation interface using lambda expressions.
+ * <p>
+ * This interface provides complete modularity for sorting and filtering operations
+ * in a GUI quiz application with persistent configurations and event-driven updates.
+ * All operations are designed as functional interfaces to support:
+ * <ul>
+ *     <li>Runtime sorting behavior modification through lambdas</li>
+ *     <li>Functional composition for multi-criteria sorting</li>
+ *     <li>Event-driven updates for UI components (lists, Leitner cards, statistics)</li>
+ *     <li>Persistence of user preferences (sorting and filtering)</li>
+ * </ul>
  * 
- * This interface provides complete modularity for sorting and filtering operations:
- * - Lambda-based sorting functions for different criteria
- * - Functional composition for complex sorting operations
- * - Event-driven sorting with callbacks
- * - Persistent sorting preferences with serialization
+ * <p>Key categories:</p>
+ * <ul>
+ *     <li><b>Sorting lambdas:</b> alphabetical, date-based, custom comparator</li>
+ *     <li><b>Filtering lambdas:</b> text-based, date-range based</li>
+ *     <li><b>Combined operations:</b> sorting + filtering composition</li>
+ *     <li><b>Persistence:</b> saving and loading sorting configurations</li>
+ *     <li><b>Events:</b> notifications for sort and filter changes</li>
+ * </ul>
  * 
- * All sorting operations are defined as functional interfaces to support:
- * - Runtime sorting behavior modification through lambdas
- * - Functional composition for multi-criteria sorting
- * - Event-driven sorting updates
- * - Persistent sorting configurations
+ * <p>All related data classes are moved to separate files for Eclipse compatibility.</p>
  * 
-<<<<<<< HEAD
  * @author D.Georgiou
  * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
+ * 
  */
 public interface SortingDelegate {
     
     // === SORTING LAMBDAS ===
     
     /**
-     * Lambda for alphabetical sorting.
-     * Function takes sort direction and returns sorting function.
+     * Lambda for alphabetical sorting of repository questions.
+     * <p>
+     * Returns a function that takes a list and returns a new sorted list according to the specified {@link SortDirection}.
+     * 
+     * @return Function that maps SortDirection to a sorting function for lists of RepoQuizeeQuestions
      */
     Function<SortDirection, Function<List<RepoQuizeeQuestions>, List<RepoQuizeeQuestions>>> alphabeticalSort();
     
     /**
-     * Lambda for date-based sorting.
-     * Function takes sort direction and returns sorting function.
+     * Lambda for date-based sorting of repository questions.
+     * <p>
+     * Returns a function that takes a list and returns a new sorted list by creation or modification date.
+     * 
+     * @return Function that maps SortDirection to a date-sorting function
      */
     Function<SortDirection, Function<List<RepoQuizeeQuestions>, List<RepoQuizeeQuestions>>> dateSort();
     
     /**
-     * Lambda for custom sorting.
-     * Function takes (comparator, direction) and returns sorting function.
+     * Lambda for custom comparator sorting.
+     * <p>
+     * Allows runtime sorting using a provided Comparator and SortDirection.
+     * 
+     * @return BiFunction mapping (Comparator, SortDirection) to a sorting function
      */
     BiFunction<Comparator<RepoQuizeeQuestions>, SortDirection, Function<List<RepoQuizeeQuestions>, List<RepoQuizeeQuestions>>> customSort();
     
@@ -51,51 +68,67 @@ public interface SortingDelegate {
     
     /**
      * Lambda for text-based filtering.
-     * Function takes filter text and returns filtering function.
+     * <p>
+     * Returns a predicate that evaluates whether a repository question matches the filter text.
+     * 
+     * @return Function mapping filter string to a Predicate for RepoQuizeeQuestions
      */
     Function<String, Predicate<RepoQuizeeQuestions>> textFilter();
     
     /**
-     * Lambda for date range filtering.
-     * Function takes date range and returns filtering function.
+     * Lambda for filtering by date range.
+     * <p>
+     * Returns a predicate that checks if a question falls within a specific date range.
+     * 
+     * @return Function mapping DateRange to a Predicate for RepoQuizeeQuestions
      */
     Function<DateRange, Predicate<RepoQuizeeQuestions>> dateRangeFilter();
     
     // === COMBINED OPERATIONS ===
     
     /**
-     * Lambda for sort and filter combination.
-     * Function takes (sortCriteria, filterCriteria) and returns combined operation.
+     * Lambda for combined sorting and filtering.
+     * <p>
+     * Returns a function that applies both sorting and filtering to a list according to {@link SortCriteria} and {@link FilterCriteria}.
+     * 
+     * @return BiFunction mapping (SortCriteria, FilterCriteria) to a function operating on lists of RepoQuizeeQuestions
      */
     BiFunction<SortCriteria, FilterCriteria, Function<List<RepoQuizeeQuestions>, List<RepoQuizeeQuestions>>> sortAndFilter();
     
     // === PERSISTENCE LAMBDAS ===
     
     /**
-     * Lambda for saving sorting preferences.
-     * Consumer saves sorting configuration to storage.
+     * Lambda for persisting sorting configuration.
+     * <p>
+     * Saves {@link SortingConfiguration} to storage or database.
      */
     Consumer<SortingConfiguration> saveSortingPreferences();
     
     /**
-     * Lambda for loading sorting preferences.
-     * Supplier loads sorting configuration from storage.
+     * Lambda for loading saved sorting configuration.
+     * <p>
+     * Returns the last saved {@link SortingConfiguration} for restoring UI state.
      */
     Supplier<SortingConfiguration> loadSortingPreferences();
     
     // === EVENT LAMBDAS ===
     
     /**
-     * Lambda for sorting change notifications.
-     * Consumer receives sorting change events.
+     * Lambda for broadcasting sorting change events.
+     * <p>
+     * Consumers receive {@link SortingChangeEvent} whenever sorting criteria changes.
      */
     Consumer<SortingChangeEvent> onSortingChanged();
     
     /**
-     * Lambda for filter change notifications.
-     * Consumer receives filter change events.
+     * Lambda for broadcasting filter change events.
+     * <p>
+     * Consumers receive {@link FilterChangeEvent} whenever filter criteria changes.
      */
     Consumer<FilterChangeEvent> onFilterChanged();
+    
+
+
     
     // === NOTE: All data classes moved to separate files for Eclipse compatibility ===
     // See: SortDirection.java, SortType.java, SortCriteria.java, FilterCriteria.java,

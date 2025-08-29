@@ -11,46 +11,43 @@ import java.util.stream.Collectors;
 /**
  * Adaptive Leitner System Manager.
  *
- * Verwaltet den Lernfortschritt mittels eines erweiterten Leitner-Kastensystems
- * (Spaced Repetition) und integriert sich in die modulare Quiz-Anwendung. Das
- * System speichert seinen Zustand (Karten, Levels, Fälligkeit, Statistiken) persistent
- * in einer separaten Datei, unabhängig von der Datenhaltung der eigentlichen Fragen.
+ * Manages learning progress using an extended Leitner box system (Spaced Repetition)
+ * and integrates with the modular quiz application. The system persistently stores
+ * its state (cards, levels, due status, statistics) in a separate file, independent
+ * from the actual question repository.
  *
- * Kernaspekte:
- * - Persistenter Zustand des Leitner-Systems (keine Test-/Beispieldaten)
- * - Delegation zur Business-Logik, um Fragen/Themen abzurufen
- * - Bereitstellung fälliger Fragen pro Thema oder global
- * - Statistiken pro Level und Thema
+ * Key aspects:
+ * - Persistent state of the Leitner system (no test/sample data)
+ * - Delegation to business logic to fetch questions/themes
+ * - Provides due questions per topic or globally
+ * - Statistics per level and topic
  *
- * Serialisierung:
- * - Der Delegat (BusinesslogicaDelegation) wird nicht serialisiert (transient).
- * - Beim Speichern wird der Zeitstempel lastSystemUpdate aktualisiert.
- * - Beim Laden werden nur die internen Daten (Karten, Statistiken) übernommen,
- *   die Laufzeitabhängigkeiten bleiben unverändert.
-<<<<<<< HEAD
- *   
+ * Serialization:
+ * - The delegate (BusinesslogicaDelegation) is not serialized (transient)
+ * - When saving, the timestamp lastSystemUpdate is updated
+ * - When loading, only internal data (cards, statistics) is restored; runtime dependencies remain unchanged
+ * 
  * @author D.Georgiou
  * @version 1.0
-=======
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
+ * 
  */
 public class AdaptiveLeitnerSystem implements Serializable {
     
     private static final long serialVersionUID = 1L;
     private static final String LEITNER_DATA_FILE = "leitner_system.dat";
     
-    // Karten-Verwaltung
+    // Card management
     private final Map<String, AdaptiveLeitnerCard> cards = new ConcurrentHashMap<>();
     private final transient BusinesslogicaDelegation delegate;
     
-    // System-Statistiken
+    // System statistics
     private int totalReviews = 0;
     private LocalDate lastSystemUpdate = LocalDate.now();
-
+    
     /**
      * Serializable snapshot that contains only the minimal state required for
-     * persistence. This prevents accidental serialization of runtime-only
-     * dependencies and stabilizes the file format across versions.
+     * persistence. Prevents accidental serialization of runtime-only dependencies
+     * and stabilizes the file format across versions.
      */
     private static class Snapshot implements Serializable {
         private static final long serialVersionUID = 1L;
@@ -62,8 +59,8 @@ public class AdaptiveLeitnerSystem implements Serializable {
     public AdaptiveLeitnerSystem(BusinesslogicaDelegation delegate) {
         this.delegate = delegate;
         loadSystem();
-        // Hinweis: Keine automatische Initialisierung neuer Karten mehr.
-        // Karten werden nur durch echte Quiz-Ergebnisse (processQuizResult) angelegt.
+        // Note: No automatic initialization of new cards.
+        // Cards are only created via real quiz results (processQuizResult).
     }
 
     /**
@@ -137,7 +134,7 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Initialisiert neue Fragen, die noch keine Leitner-Karten haben
+     * Initializes new questions that do not yet have Leitner cards
      */
     private void initializeNewQuestions() {
         if (delegate == null) return;
@@ -172,31 +169,27 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Verarbeitet ein Quiz-Ergebnis und aktualisiert die entsprechende Karte
-     */
-    /**
-     * Verarbeitet das Ergebnis einer beantworteten Frage und aktualisiert die
-     * entsprechende Leitner-Karte. Legt bei Bedarf eine neue Karte an.
+     * Processes a quiz result and updates the corresponding card.
+     * Creates a new card if necessary.
      *
-     * Thread-Sicherheit: Diese Methode ist nicht synchronisiert. Wenn sie aus
-     * mehreren Threads aufgerufen wird, sollten Aufrufe serialisiert oder eine
-     * externe Synchronisation verwendet werden.
+     * Thread safety: This method is not synchronized. External synchronization
+     * is recommended if called from multiple threads.
      *
-     * Persistenz: Nach der Aktualisierung wird der Systemzustand gespeichert.
+     * Persistence: Saves the system state after processing the result.
      *
-     * @param result Ergebnisobjekt des Quiz-Spiels (Thema, Titel, Korrektheit, Antwortzeit)
+     * @param result QuizResult object (theme, question title, correctness, answer time)
      */
     public void processQuizResult(ModularQuizPlay.QuizResult result) {
         String questionId = generateQuestionId(result.theme, result.questionTitle);
         
         AdaptiveLeitnerCard card = cards.get(questionId);
         if (card == null) {
-            // Neue Karte erstellen falls nicht vorhanden
+            // Create new card if missing
             card = new AdaptiveLeitnerCard(questionId, result.theme, result.questionTitle);
             cards.put(questionId, card);
         }
         
-        // Ergebnis verarbeiten
+        // Process result
         card.processResult(result.isCorrect, result.getAnswerTimeSeconds());
         totalReviews++;
         
@@ -204,14 +197,13 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Gibt fällige Fragen für ein bestimmtes Thema zurück
-     */
-    /**
-     * Ermittelt alle fälligen Fragen für ein gegebenes Thema und sortiert sie
-     * absteigend nach Priorität (wichtigste zuerst).
+     * Returns due questions for a specific topic.
      *
-     * @param theme Das gewünschte Thema
-     * @return Liste fälliger Fragen des Themas (leer, wenn keine fällig sind)
+     * Retrieves all due questions for a given topic, sorted descending by priority
+     * (most important first).
+     *
+     * @param theme The topic to filter questions
+     * @return List of due questions for the topic (empty if none)
      */
     public List<RepoQuizeeQuestions> getDueQuestions(String theme) {
         if (delegate == null) return new ArrayList<>();
@@ -232,7 +224,7 @@ public class AdaptiveLeitnerSystem implements Serializable {
                 }
             }
 
-            // Sortiere nach Priorität (wichtigste zuerst)
+            // Sort by priority (most important first)
             dueQuestions.sort((q1, q2) -> {
                 String id1 = generateQuestionId(q1);
                 String id2 = generateQuestionId(q2);
@@ -252,13 +244,12 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Gibt alle fälligen Fragen zurück (themenübergreifend)
-     */
-    /**
-     * Ermittelt alle fälligen Fragen über alle Themen hinweg und sortiert sie
-     * absteigend nach Priorität (wichtigste zuerst).
+     * Returns all due questions (across all topics).
      *
-     * @return Liste aller fälligen Fragen (leer, wenn keine fällig sind)
+     * Retrieves all due questions across all topics, sorted descending by priority
+     * (most important first).
+     *
+     * @return List of all due questions (empty if none)
      */
     public List<RepoQuizeeQuestions> getAllDueQuestions() {
         if (delegate == null) return new ArrayList<>();
@@ -272,7 +263,7 @@ public class AdaptiveLeitnerSystem implements Serializable {
                 allDueQuestions.addAll(themeDueQuestions);
             }
 
-            // Sortiere nach Priorität (wichtigste zuerst)
+            // Sort by priority (most important first)
             allDueQuestions.sort((q1, q2) -> {
                 String id1 = generateQuestionId(q1);
                 String id2 = generateQuestionId(q2);
@@ -292,52 +283,47 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Gibt Statistiken für ein bestimmtes Thema zurück
-     */
-    /**
-     * Liefert eine Aufteilung der Karten nach Leitner-Leveln für ein bestimmtes Thema.
-     * Wird null oder "Alle Themen" übergeben, werden alle Karten berücksichtigt.
+     * Returns statistics for a specific topic.
      *
-     * @param theme Thema oder null/"Alle Themen" für globale Sicht
-     * @return Map mit Level -> Liste Karten
+     * Provides a distribution of cards by Leitner levels for a given topic.
+     * If null or "All Topics" is passed, all cards are considered.
+     *
+     * @param theme Topic or null/"All Topics" for global view
+     * @return Map of level -> list of cards
      */
     public Map<Integer, List<AdaptiveLeitnerCard>> getThemeStatistics(String theme) {
         Map<Integer, List<AdaptiveLeitnerCard>> levelStats = new HashMap<>();
         
-        // Initialisiere alle Level
+        // Initialize all levels
         for (int level = 1; level <= 6; level++) {
             levelStats.put(level, new ArrayList<>());
         }
         
-        // Filtere Karten nach Thema
+        // Filter cards by topic
         cards.values().stream()
-            .filter(card -> theme == null || "Alle Themen".equals(theme) || theme.equals(card.getTheme()))
+            .filter(card -> theme == null || "All Topics".equals(theme) || theme.equals(card.getTheme()))
             .forEach(card -> levelStats.get(card.getLevel()).add(card));
         
         return levelStats;
     }
     
     /**
-     * Gibt Gesamtstatistiken zurück
-     */
-    /**
-     * Liefert Gesamtstatistiken (alle Themen) als Level-zu-Karten-Zuordnung.
+     * Returns overall statistics (all topics).
      *
-     * @return Map mit Level -> Liste Karten
+     * @return Map of level -> list of cards
      */
     public Map<Integer, List<AdaptiveLeitnerCard>> getAllStatistics() {
         return getThemeStatistics(null);
     }
     
     /**
-     * Gibt die Anzahl fälliger Fragen pro Level zurück
-     */
-    /**
-     * Zählt die Anzahl fälliger Karten pro Level für das angegebene Thema oder global,
-     * wenn null/"Alle Themen" übergeben wird.
+     * Returns count of due cards per level.
      *
-     * @param theme Thema oder null/"Alle Themen"
-     * @return Map Level -> Anzahl fälliger Karten
+     * Counts the number of due cards per level for the specified topic, or globally
+     * if null/"All Topics" is passed.
+     *
+     * @param theme Topic or null/"All Topics"
+     * @return Map of level -> due card count
      */
     public Map<Integer, Integer> getDueCountByLevel(String theme) {
         Map<Integer, Integer> dueCounts = new HashMap<>();
@@ -347,7 +333,7 @@ public class AdaptiveLeitnerSystem implements Serializable {
         }
         
         cards.values().stream()
-            .filter(card -> theme == null || "Alle Themen".equals(theme) || theme.equals(card.getTheme()))
+            .filter(card -> theme == null || "All Topics".equals(theme) || theme.equals(card.getTheme()))
             .filter(AdaptiveLeitnerCard::isDue)
             .forEach(card -> dueCounts.merge(card.getLevel(), 1, Integer::sum));
         
@@ -355,14 +341,11 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Gibt Karte für eine bestimmte Frage zurück
-     */
-    /**
-     * Gibt die Karte zu einer bestimmten Frage zurück.
+     * Returns the card for a specific question.
      *
-     * @param theme Thema
-     * @param questionTitle Fragetitel
-     * @return Karte oder null, wenn keine vorhanden ist
+     * @param theme Topic
+     * @param questionTitle Question title
+     * @return Card or null if none exists
      */
     public AdaptiveLeitnerCard getCard(String theme, String questionTitle) {
         String questionId = generateQuestionId(theme, questionTitle);
@@ -370,52 +353,43 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Gibt alle Karten für ein Thema zurück
-     */
-    /**
-     * Gibt alle Karten für ein bestimmtes Thema zurück. Wenn null oder
-     * "Alle Themen" übergeben wird, werden alle Karten zurückgegeben.
+     * Returns all cards for a topic.
      *
-     * @param theme Thema oder null/"Alle Themen"
-     * @return sortierte Liste der Karten (nach Fragetitel)
+     * @param theme Topic or null/"All Topics"
+     * @return Sorted list of cards (by question title)
      */
     public List<AdaptiveLeitnerCard> getCardsForTheme(String theme) {
         return cards.values().stream()
-            .filter(card -> theme == null || "Alle Themen".equals(theme) || theme.equals(card.getTheme()))
+            .filter(card -> theme == null || "All Topics".equals(theme) || theme.equals(card.getTheme()))
             .sorted((a, b) -> a.getQuestionTitle().compareTo(b.getQuestionTitle()))
             .collect(Collectors.toList());
     }
     
     /**
-     * Generiert eindeutige ID für eine Frage
-     */
-    /**
-     * Erzeugt eine stabile, eindeutige ID für eine Frage auf Basis von Thema und Titel.
+     * Generates a unique ID for a question.
      *
-     * @param question Frageobjekt
-     * @return ID in der Form "<thema>:<titel>"
+     * @param question Question object
+     * @return ID in the form "<theme>:<title>"
      */
     private String generateQuestionId(RepoQuizeeQuestions question) {
         return generateQuestionId(question.getThema(), question.getTitel());
     }
     
     /**
-     * Erzeugt eine stabile, eindeutige ID für eine Frage auf Basis von Thema und Titel.
+     * Generates a unique ID for a question based on theme and title.
      *
-     * @param theme Thema
-     * @param title Titel der Frage
-     * @return ID in der Form "<thema>:<titel>"
+     * @param theme Topic
+     * @param title Question title
+     * @return ID in the form "<theme>:<title>"
      */
     private String generateQuestionId(String theme, String title) {
         return theme + ":" + title;
     }
     
     /**
-     * Speichert das Leitner-System
-     */
-    /**
-     * Speichert den aktuellen Zustand des Leitner-Systems in eine Datei.
-     * Aktualisiert vor dem Speichern den Zeitstempel lastSystemUpdate.
+     * Saves the Leitner system.
+     *
+     * Stores the current state in a file. Updates lastSystemUpdate before saving.
      */
     private void saveSystem() {
         this.lastSystemUpdate = LocalDate.now();
@@ -446,17 +420,13 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Lädt das Leitner-System
-     */
-    /**
-     * Lädt den Zustand des Leitner-Systems aus der Datei, sofern vorhanden.
-     * Bei Fehlern wird mit einem leeren System fortgesetzt.
+     * Loads the Leitner system.
+     *
+     * Loads the state from file if present. If an error occurs, starts with a fresh system.
      */
     private void loadSystem() {
         File file = new File(LEITNER_DATA_FILE);
-        if (!file.exists()) {
-            return; // Neues System
-        }
+        if (!file.exists()) return; // New system
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             Object obj = ois.readObject();
             if (obj instanceof Snapshot) {
@@ -478,7 +448,6 @@ public class AdaptiveLeitnerSystem implements Serializable {
             }
         } catch (Exception e) {
             System.err.println("Error loading Leitner system: " + e.getMessage());
-            // Datei könnte korrupt sein (z. B. abgebrochene Schreibvorgänge) → löschen und sauber starten
             if (file.exists() && !file.delete()) {
                 System.err.println("Unable to remove corrupt Leitner data file");
             }
@@ -486,38 +455,32 @@ public class AdaptiveLeitnerSystem implements Serializable {
     }
     
     /**
-     * Setzt das gesamte System zurück
-     */
-    /**
-     * Setzt das Leitner-System vollständig zurück (löscht alle Karten und Statistiken),
-     * entfernt die Persistenzdatei und initialisiert Karten für vorhandene Fragen neu.
+     * Resets the entire system.
+     *
+     * Clears all cards and statistics, deletes the persistence file, and optionally
+     * reinitializes cards for existing questions.
      */
     public void resetSystem() {
         cards.clear();
         totalReviews = 0;
         lastSystemUpdate = LocalDate.now();
-        
-        // Datei löschen
         File file = new File(LEITNER_DATA_FILE);
-        if (file.exists()) {
-            file.delete();
-        }
-        // Keine automatische Neu-Initialisierung mehr
+        if (file.exists()) file.delete();
     }
     
     // ================ GETTERS ================
-    
+
     public int getTotalCards() { return cards.size(); }
     public int getTotalReviews() { return totalReviews; }
     public LocalDate getLastSystemUpdate() { return lastSystemUpdate; }
-    
+
     public int getDueCardsCount() {
         return (int) cards.values().stream().filter(AdaptiveLeitnerCard::isDue).count();
     }
-    
+
     public int getDueCardsCount(String theme) {
         return (int) cards.values().stream()
-            .filter(card -> theme == null || "Alle Themen".equals(theme) || theme.equals(card.getTheme()))
+            .filter(card -> theme == null || "All Topics".equals(theme) || theme.equals(card.getTheme()))
             .filter(AdaptiveLeitnerCard::isDue)
             .count();
     }

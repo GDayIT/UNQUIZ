@@ -5,34 +5,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Utility class for mapping between different quiz data models.
+ * QuizDataMapper is a **utility class** for converting between different quiz data models.
+ * <p>
+ * It provides mapping methods between:
+ * <ul>
+ *     <li>{@link RepoQuizeeQuestions} - business layer representation</li>
+ *     <li>{@link QuizQuestion} - GUI layer representation</li>
+ *     <li>{@link QuizFormData} - form data transfer object for editing/creating questions</li>
+ * </ul>
+ * <p>
+ * By centralizing conversions, the class ensures **consistent data handling** across
+ * Themes, Questions, Leitner Cards, Quiz Sessions, and persistent storage.
+ * <p>
+ * All methods are static and **null-safe**, returning null or empty lists when inputs are null.
+ * Instantiation is prevented.
  * 
- * This class provides conversion methods between:
- * - RepoQuizeeQuestions (business layer model)
- * - QuizQuestion (GUI layer model)
- * - QuizFormData (form data transfer object)
- * 
- * This ensures consistent data handling across different layers of the application.
-<<<<<<< HEAD
- * 
- * @author D.Georgiou
+ * @author D.
+ * Georgiou
  * @version 1.0
-=======
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 public class QuizDataMapper {
     
     /**
-     * Private constructor to prevent instantiation of utility class.
+     * Private constructor to prevent instantiation.
+     * This class is a static utility for model conversion.
      */
     private QuizDataMapper() {
         // Utility class - no instances needed
     }
     
     /**
-     * Converts a RepoQuizeeQuestions to a QuizQuestion.
+     * Converts a {@link RepoQuizeeQuestions} to a {@link QuizQuestion}.
+     * Maps fields: title, text, answers, correctness flags, theme, and creation timestamp.
+     *
      * @param repo the repository question to convert
-     * @return the converted quiz question, or null if input is null
+     * @return the corresponding QuizQuestion, or null if repo is null
      */
     public static QuizQuestion toQuizQuestion(RepoQuizeeQuestions repo) {
         if (repo == null) return null;
@@ -59,9 +66,11 @@ public class QuizDataMapper {
     }
     
     /**
-     * Converts a QuizQuestion to a RepoQuizeeQuestions.
+     * Converts a {@link QuizQuestion} to {@link RepoQuizeeQuestions}.
+     * Maps GUI fields back to the business layer representation.
+     *
      * @param question the quiz question to convert
-     * @return the converted repository question, or null if input is null
+     * @return the corresponding repository question, or null if question is null
      */
     public static RepoQuizeeQuestions toRepoQuestion(QuizQuestion question) {
         if (question == null) return null;
@@ -87,9 +96,11 @@ public class QuizDataMapper {
     }
     
     /**
-     * Converts QuizFormData to a RepoQuizeeQuestions.
+     * Converts {@link QuizFormData} to {@link RepoQuizeeQuestions}.
+     * Useful for persisting form input directly to business layer.
+     *
      * @param formData the form data to convert
-     * @return the converted repository question, or null if input is null
+     * @return the corresponding repository question, or null if formData is null
      */
     public static RepoQuizeeQuestions toRepoQuestion(QuizFormData formData) {
         if (formData == null) return null;
@@ -103,9 +114,11 @@ public class QuizDataMapper {
     }
     
     /**
-     * Converts a RepoQuizeeQuestions to QuizFormData.
+     * Converts a {@link RepoQuizeeQuestions} to {@link QuizFormData}.
+     * Useful for populating edit forms from persisted questions.
+     *
      * @param repo the repository question to convert
-     * @return the converted form data, or null if input is null
+     * @return the corresponding form data, or null if repo is null
      */
     public static QuizFormData toFormData(RepoQuizeeQuestions repo) {
         if (repo == null) return null;
@@ -128,9 +141,11 @@ public class QuizDataMapper {
     }
     
     /**
-     * Converts a QuizQuestion to QuizFormData.
+     * Converts a {@link QuizQuestion} to {@link QuizFormData}.
+     * Supports GUI form population.
+     *
      * @param question the quiz question to convert
-     * @return the converted form data, or null if input is null
+     * @return the corresponding form data, or null if question is null
      */
     public static QuizFormData toFormData(QuizQuestion question) {
         if (question == null) return null;
@@ -153,9 +168,10 @@ public class QuizDataMapper {
     }
     
     /**
-     * Converts a list of RepoQuizeeQuestions to a list of QuizQuestions.
-     * @param repoList the list of repository questions to convert
-     * @return the converted list of quiz questions
+     * Converts a list of {@link RepoQuizeeQuestions} to a list of {@link QuizQuestion}.
+     * 
+     * @param repoList the repository questions to convert
+     * @return the converted list of QuizQuestions
      */
     public static List<QuizQuestion> toQuizQuestionList(List<RepoQuizeeQuestions> repoList) {
         if (repoList == null) return new ArrayList<>();
@@ -171,8 +187,9 @@ public class QuizDataMapper {
     }
     
     /**
-     * Converts a list of QuizQuestions to a list of RepoQuizeeQuestions.
-     * @param questionList the list of quiz questions to convert
+     * Converts a list of {@link QuizQuestion} to a list of {@link RepoQuizeeQuestions}.
+     * 
+     * @param questionList the quiz questions to convert
      * @return the converted list of repository questions
      */
     public static List<RepoQuizeeQuestions> toRepoQuestionList(List<QuizQuestion> questionList) {

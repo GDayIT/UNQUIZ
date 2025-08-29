@@ -8,45 +8,73 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.*;
 
 /**
- * Fully modular persistence service using functional programming and lambda expressions.
- * 
- * This service implements complete modularity through:
- * - Lambda-based operations for all CRUD functions
- * - Functional composition for complex operations
- * - Event-driven architecture with callbacks
- * - Thread-safe operations using concurrent collections
- * - Serialization support for all data structures
+ * {@code ModularPersistenceService} is a fully modular, functional persistence
+ * service for dbbl, implementing all CRUD operations for themes, questions,
+ * Leitner cards, and session management.
+ * <p>
+ * This class uses lambda expressions and functional programming paradigms
+ * to decouple persistence logic from the business layer, providing:
+ * <ul>
+ *   <li>Thread-safe operations using {@link ConcurrentHashMap}</li>
+ *   <li>Event-driven notifications for data changes and errors</li>
+ *   <li>Serialization support for all data structures</li>
+ *   <li>Backup creation and snapshot management</li>
+ * </ul>
  * 
  * Architecture:
- * - All operations are defined as lambdas/functions
- * - No direct method calls between modules
- * - Complete separation of concerns
- * - Reactive programming patterns
+ * <pre>
+ * ModularBusinessController → ModularPersistenceService → Serialized data storage
+ * </pre>
+ * <p>
+ * All operations are exposed via functional interfaces such as {@link Function},
+ * {@link Supplier}, {@link Consumer}, and {@link Runnable}, enabling easy
+ * testing, lambda-based usage, and reactive behavior.
  * 
-<<<<<<< HEAD
- * @author D.Georgiou
+ * @author D.
  * @version 1.0
->>>>>>> 51d430330dca283242d67944a6d45c96dfa445fd
  */
 class ModularPersistenceService implements Serializable, PersistenceDelegate {
+    
     private static final long serialVersionUID = 1L;
     private static final String DATA_FILE = "quiz_questions.dat";
-    
-    // === CORE DATA STRUCTURES ===
+
+    // ------------------- CORE DATA STRUCTURES -------------------
+
+    /**
+     * Stores all questions grouped by theme.
+     * Thread-safe concurrent map for multi-threaded access.
+     */
     private final Map<String, List<RepoQuizeeQuestions>> questionsByTheme = new ConcurrentHashMap<>();
+
+    /**
+     * Stores theme descriptions for each theme.
+     */
     private final Map<String, String> themeDescriptions = new ConcurrentHashMap<>();
 
+    /**
+     * Timestamp indicating when the service instance was created.
+     */
     private final LocalDateTime createdAt;
-    
-    // === SERIALIZATION SNAPSHOT ===
+
+    // ------------------- SERIALIZATION SNAPSHOT -------------------
+
+    /**
+     * Snapshot of the data for persistence purposes.
+     * Serialized to disk and used for loading and backup.
+     */
     private static class Snapshot implements Serializable {
         private static final long serialVersionUID = 1L;
         Map<String, List<RepoQuizeeQuestions>> questionsByTheme;
         Map<String, String> themeDescriptions;
-        LocalDateTime createdAt;
+        @SuppressWarnings("unused")
+		LocalDateTime createdAt;
     }
-    
-    // === LAMBDA STORAGE (RUNTIME ONLY) ===
+
+    // ------------------- LAMBDA STORAGE (TRANSIENT) -------------------
+
+    /**
+     * Functional implementations for runtime CRUD and utility operations.
+     */
     private transient Function<ThemeData, Boolean> saveThemeImpl;
     private transient Function<String, ThemeData> loadThemeImpl;
     private transient Function<String, Boolean> deleteThemeImpl;
@@ -59,27 +87,33 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
     private transient Function<String, Boolean> createBackupImpl;
     private transient Consumer<DataChangeEvent> onDataChangedImpl;
     private transient Consumer<PersistenceError> onErrorImpl;
-    
+
+    // ------------------- CONSTRUCTOR -------------------
+
     /**
-     * Creates a new modular persistence service with lambda-based configuration.
+     * Creates a new modular persistence service instance.
+     * Initializes all lambda-based operations and loads existing data.
      */
     public ModularPersistenceService() {
         this.createdAt = LocalDateTime.now();
         initializeLambdas();
-        loadAllImpl.run(); // Load existing data
+        loadAllImpl.run(); // Load persisted data
     }
-    
+
+    // ------------------- LAMBDA INITIALIZATION -------------------
+
     /**
-     * Initializes all lambda implementations using functional programming.
+     * Initializes all lambda implementations for CRUD, backup, and event handling.
+     * This decouples the functional behavior from the core class logic.
      */
-    private void initializeLambdas() {
-        
+    @SuppressWarnings("unused")
+	private void initializeLambdas() {
+
         // === THEME OPERATIONS ===
         saveThemeImpl = themeData -> {
             try {
                 questionsByTheme.computeIfAbsent(themeData.title, k -> new ArrayList<>());
                 themeDescriptions.put(themeData.title, themeData.description);
-                
                 persistAllImpl.run();
                 notifyDataChange("THEME_SAVED", themeData.title);
                 return true;
@@ -88,17 +122,13 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                 return false;
             }
         };
-        
-        loadThemeImpl = title -> {
-            String description = themeDescriptions.getOrDefault(title, "");
-            return new ThemeData(title, description);
-        };
-        
+
+        loadThemeImpl = title -> new ThemeData(title, themeDescriptions.getOrDefault(title, ""));
+
         deleteThemeImpl = title -> {
             try {
                 questionsByTheme.remove(title);
                 themeDescriptions.remove(title);
-                
                 persistAllImpl.run();
                 notifyDataChange("THEME_DELETED", title);
                 return true;
@@ -107,31 +137,29 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                 return false;
             }
         };
-        
+
         getAllThemesImpl = () -> new ArrayList<>(questionsByTheme.keySet());
-        
+
         // === QUESTION OPERATIONS ===
         saveQuestionImpl = questionData -> {
             try {
                 List<RepoQuizeeQuestions> questions = questionsByTheme.computeIfAbsent(
-                    questionData.theme, k -> new ArrayList<>());
+                        questionData.theme, k -> new ArrayList<>());
                 
-                // Convert to internal format
                 boolean[] correctArray = new boolean[questionData.correctFlags.size()];
                 for (int i = 0; i < questionData.correctFlags.size(); i++) {
                     correctArray[i] = questionData.correctFlags.get(i);
                 }
 
                 RepoQuizeeQuestions question = new RepoQuizeeQuestions(
-                    questionData.title,
-                    questionData.questionText,
-                    questionData.answers.toArray(new String[0]),
-                    correctArray,
-                    questionData.explanation
+                        questionData.title,
+                        questionData.questionText,
+                        questionData.answers.toArray(new String[0]),
+                        correctArray,
+                        questionData.explanation
                 );
                 question.setThema(questionData.theme);
-                
-                // Update existing or add new
+
                 boolean updated = false;
                 for (int i = 0; i < questions.size(); i++) {
                     if (questions.get(i).getTitel().equals(questionData.title)) {
@@ -140,11 +168,8 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                         break;
                     }
                 }
-                
-                if (!updated) {
-                    questions.add(question);
-                }
-                
+                if (!updated) questions.add(question);
+
                 persistAllImpl.run();
                 notifyDataChange("QUESTION_SAVED", questionData.theme + ":" + questionData.title);
                 return true;
@@ -153,21 +178,21 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                 return false;
             }
         };
-        
+
         loadQuestionsByThemeImpl = theme -> {
             List<RepoQuizeeQuestions> questions = questionsByTheme.getOrDefault(theme, new ArrayList<>());
             return questions.stream()
-                .map(q -> new QuestionData(
-                    q.getThema(),
-                    q.getTitel(),
-                    q.getFrageText(),
-                    q.getErklaerung() != null ? q.getErklaerung() : "",
-                    q.getAntworten(),
-                    q.getKorrekt()
-                ))
-                .collect(Collectors.toList());
+                    .map(q -> new QuestionData(
+                            q.getThema(),
+                            q.getTitel(),
+                            q.getFrageText(),
+                            q.getErklaerung() != null ? q.getErklaerung() : "",
+                            q.getAntworten(),
+                            q.getKorrekt()
+                    ))
+                    .collect(Collectors.toList());
         };
-        
+
         deleteQuestionImpl = request -> {
             try {
                 List<RepoQuizeeQuestions> questions = questionsByTheme.get(request.theme);
@@ -183,7 +208,7 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                 return false;
             }
         };
-        
+
         // === PERSISTENCE OPERATIONS ===
         persistAllImpl = () -> {
             File target = new File(DATA_FILE);
@@ -194,28 +219,18 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                 snap.themeDescriptions = new HashMap<>(themeDescriptions);
                 snap.createdAt = createdAt;
                 out.writeObject(snap);
-                out.flush();
-                log("Data persisted successfully");
             } catch (IOException e) {
                 handleError(e);
                 if (tmp.exists()) tmp.delete();
                 return;
             }
-            if (target.exists() && !target.delete()) {
-                log("Failed to replace existing data file");
-                tmp.delete();
-                return;
-            }
-            if (!tmp.renameTo(target)) {
-                log("Failed to finalize data save");
-                tmp.delete();
-            }
+            if (target.exists() && !target.delete()) tmp.delete();
+            if (!tmp.renameTo(target)) tmp.delete();
         };
-        
+
         loadAllImpl = () -> {
             File f = new File(DATA_FILE);
             if (!f.exists()) {
-                log("No existing data found, starting fresh");
                 initializeExampleData();
                 return;
             }
@@ -223,32 +238,16 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                 Object obj = in.readObject();
                 if (obj instanceof Snapshot) {
                     Snapshot snap = (Snapshot) obj;
-                    this.questionsByTheme.clear();
-                    this.questionsByTheme.putAll(snap.questionsByTheme != null ? snap.questionsByTheme : new HashMap<>());
-                    this.themeDescriptions.clear();
-                    this.themeDescriptions.putAll(snap.themeDescriptions != null ? snap.themeDescriptions : new HashMap<>());
-                    log("Data loaded successfully");
-                } else if (obj instanceof ModularPersistenceService) {
-                    ModularPersistenceService loaded = (ModularPersistenceService) obj;
-                    // Legacy fallback
-                    this.questionsByTheme.clear();
-                    this.questionsByTheme.putAll(loaded.questionsByTheme);
-                    this.themeDescriptions.clear();
-                    this.themeDescriptions.putAll(loaded.themeDescriptions);
-                    log("Data loaded from legacy format");
-                } else {
-                    log("Unknown data format - starting fresh");
-                    initializeExampleData();
-                }
+                    questionsByTheme.clear();
+                    questionsByTheme.putAll(snap.questionsByTheme != null ? snap.questionsByTheme : new HashMap<>());
+                    themeDescriptions.clear();
+                    themeDescriptions.putAll(snap.themeDescriptions != null ? snap.themeDescriptions : new HashMap<>());
+                } else initializeExampleData();
             } catch (IOException | ClassNotFoundException e) {
-                log("Failed to load data - starting fresh");
-                if (f.exists() && !f.delete()) {
-                    log("Failed to remove corrupt data file");
-                }
                 initializeExampleData();
             }
         };
-        
+
         createBackupImpl = backupName -> {
             try {
                 File original = new File(DATA_FILE);
@@ -270,22 +269,13 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
                 return false;
             }
         };
-        
+
         // === EVENT HANDLING ===
-        onDataChangedImpl = event -> {
-            log("Data changed: " + event.type + " - " + event.target);
-            // Additional event handling can be added here
-        };
-        
-        onErrorImpl = error -> {
-            log("Error in " + error.operation + ": " + error.message);
-            if (error.cause != null) {
-                error.cause.printStackTrace();
-            }
-        };
+        onDataChangedImpl = event -> {};
+        onErrorImpl = error -> { if (error.cause != null) error.cause.printStackTrace(); };
     }
-    
-    // === INTERFACE IMPLEMENTATIONS ===
+
+    // ------------------- INTERFACE IMPLEMENTATIONS -------------------
     @Override public Function<ThemeData, Boolean> saveTheme() { return saveThemeImpl; }
     @Override public Function<String, ThemeData> loadTheme() { return loadThemeImpl; }
     @Override public Function<String, Boolean> deleteTheme() { return deleteThemeImpl; }
@@ -298,23 +288,19 @@ class ModularPersistenceService implements Serializable, PersistenceDelegate {
     @Override public Function<String, Boolean> createBackup() { return createBackupImpl; }
     @Override public Consumer<DataChangeEvent> onDataChanged() { return onDataChangedImpl; }
     @Override public Consumer<PersistenceError> onError() { return onErrorImpl; }
-    
-    // === UTILITY METHODS ===
+
+    // ------------------- UTILITY METHODS -------------------
+
     private Void handleError(Throwable e) {
         onErrorImpl.accept(new PersistenceError("PERSISTENCE", e.getMessage(), e));
         return null;
     }
-    
-    private void log(String message) {
-        System.out.println("[" + LocalDateTime.now() + "] " + message);
-    }
-    
+
     private void notifyDataChange(String type, String target) {
         onDataChangedImpl.accept(new DataChangeEvent(type, target));
     }
-    
+
     private void initializeExampleData() {
-        // Start with clean slate (no seeded data)
-        log("Starting with empty database - no example data created");
+        // No initial seed; empty database
     }
 }

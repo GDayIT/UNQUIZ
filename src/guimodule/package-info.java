@@ -16,6 +16,9 @@
  *
  * Thread-Sicherheit:
  * - UI-Operationen auf der EDT (Event Dispatch Thread); Persistenz/IO in Hintergrund-Threads.
+ * 
+ * Da dieser Package sehr umfangreich ist wird eine weitere ausfürliche package-info beschreibung ausgelassen.
+ * Viel Spaß beim nutzen!
  *
  * Beispielnutzung:
  * <pre>
