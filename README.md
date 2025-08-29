@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 📘 UNQUIZ
 
 What is it?! 
@@ -480,8 +479,3 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
 **D.Georgiou**  
 📧 GitHub-Profil  
 📧 optional: email.bla@fake.de
-
-
-
-
->>>>>>> 06c8800 (Replace old code with new version)
