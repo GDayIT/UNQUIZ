@@ -328,15 +328,16 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
 <details>
   <summary>▶️ Mehr Infos anzeigen</summary>
 
-  Hier steht der Text, der **zuerst versteckt** ist.  
-  Du kannst auch Listen, Code oder Bilder einfügen:
+  Hier steht nix **EasterEgg** running gag.  
+  :
 
-  - Punkt 1
-  - Punkt 2
-  - Punkt 3
+  - Schau
+  - 🥁 👇​ 🥁
+  - 🥁 👌​ 🥁(Bongoloch)
 
   ```java
-  // Beispielcode
+  // wenn es zu viel war..
   System.out.println("Hello Security!");
+
 
 
