@@ -323,3 +323,20 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
 ---
 ---
 
+
+
+<details>
+  <summary>▶️ Mehr Infos anzeigen</summary>
+
+  Hier steht der Text, der **zuerst versteckt** ist.  
+  Du kannst auch Listen, Code oder Bilder einfügen:
+
+  - Punkt 1
+  - Punkt 2
+  - Punkt 3
+
+  ```java
+  // Beispielcode
+  System.out.println("Hello Security!");
+
+
