@@ -292,7 +292,10 @@ Falls du **JUnit 5** in Eclipse verwendest:
 > ⚠️ Hinweis:  
 > Die aktuelle Version basiert auf Java und wird über die Entwicklungsumgebung gestartet.  
 > In einer zukünftigen Version wird eine ausführbare `.exe`-Datei verfügbar sein, die alle Funktionen als eigenständige Windows-Anwendung bereitstellt – ohne zusätzliche Installation von Java oder IDE.
-> 
+> Eine Dynamische Web anbindung und eine funktionierende Datenbank.
+> Die Funktionalitäten sind für ein zukunftigen Release vorgesehen.
+>
+> - Release in progress
 
 ---
 
@@ -338,6 +341,7 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
   ```java
   // wenn es zu viel war..
   System.out.println("Hello Security!");
+
 
 
 
