@@ -343,7 +343,7 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
   ```java
   // wenn es zu viel war..
   System.out.println("Hello Security!");
-<details>
+</details>
 ```
 ---
 
@@ -693,8 +693,10 @@ For questions, ideas, or feedback, feel free to contact:
   ```java
   // If it was too much..
   System.out.println("Hello Security!");
-
+</details>
+```
 
 ---
+</details>
 
 
