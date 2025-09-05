@@ -691,7 +691,7 @@ For questions, ideas, or feedback, feel free to contact:
 
   - Look
   - 🥁 👇 🥁
-  - 🥁 👌 🥁 (Bongoloch)
+  - 🥁 👌 🥁 (circle game/Bongoloch)
 
   ```java
   // If it was too much..
@@ -701,6 +701,7 @@ For questions, ideas, or feedback, feel free to contact:
 
 ---
 </details>
+
 
 
 
