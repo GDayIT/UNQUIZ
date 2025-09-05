@@ -87,7 +87,7 @@ UNQUIZ/
 │                       ├── blocking_excel_change.yml
 │                       └── Admin-only.yml
 │ 
-├── ProjektDocumentation/Projektmanagement/Storyboards/Use Cases/Klassendiagramm(ERD)/Qualitätssicherung         (Beinhaltet alle Projekt Dokumente(QL-UC-0-3 + Prj-UC-0-1, UML, Storyboards, Qualitätssicherung(Vollwertige und Umfängliche Tests),(Allgemeines zum Projekt, Projektmanagement, Status und Tage)))
+├── ProjektDocumentation/Projektmanagement/Storyboards/Use Cases/Klassendiagramm(ERD)/Qualitätssicherung         (Beinhaltet alle Projekt Dokumente((ohne Pflichtenheft!)  (QL-UC-0-3 + Prj-UC-0-1, UML, Storyboards, Qualitätssicherung(Vollwertige und Umfängliche Tests),(Allgemeines zum Projekt, Projektmanagement, Status und Tage))))
 │ 
 ├──────────── src/
 │   ├── dbbl/
@@ -338,6 +338,7 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
   ```java
   // wenn es zu viel war..
   System.out.println("Hello Security!");
+
 
 
 
