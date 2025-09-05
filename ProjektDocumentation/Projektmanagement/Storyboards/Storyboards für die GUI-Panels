@@ -1,0 +1,75 @@
+Storyboards für die GUI-Panels
+
+
+
+
+Storyboard 1: QuestionCreationPanel (Frage erstellen)
+Szene 1: Leeres Panel. Der Benutzer öffnet den Tab. Er sieht:
+Ein Dropdown-Menü "Thema auswählen" (mit bestehenden Themen).
+Ein Textfeld "Fragentitel".
+Ein großes Textfeld "Fragetext".
+Mehrere Textfelder für "Antwort 1", "Antwort 2", ... mit je einem Radio-Button daneben, um die korrekte Antwort zu markieren.
+Einen "Speichern"-Button.
+Szene 2: Dateneingabe. Der Benutzer wählt das Thema "Java Grundlagen", gibt Titel und Text der Frage ein und füllt vier Antwortoptionen aus. Er klickt den Radio-Button neben der korrekten Antwort.
+Szene 3: Speichern. Der Benutzer klickt auf "Speichern".
+Erfolg: Eine Dialogbox erscheint: "Frage erfolgreich gespeichert!". Die Felder im Panel werden geleert, damit eine neue Frage eingegeben werden kann.
+Fehler: Der Benutzer hat vergessen, die korrekte Antwort zu markieren. Eine Dialogbox erscheint: "Fehler: Bitte markieren Sie die korrekte Antwort." Die eingegebenen Daten bleiben erhalten.
+
+
+
+Storyboard 2: QuestionListPanel (Fragenliste)
+Szene 1: Initiale Ansicht. Der Benutzer öffnet den Tab. Er sieht:
+Ein Dropdown-Menü "Thema filtern".
+Eine leere Tabelle mit Spalten wie "Titel", "Thema".
+Ausgegraute Buttons: "Bearbeiten", "Löschen".
+Szene 2: Filtern. Der Benutzer wählt das Thema "Java Grundlagen" aus dem Dropdown. Die Tabelle füllt sich sofort mit allen Fragen zu diesem Thema.
+Szene 3: Interaktion. Der Benutzer klickt auf eine Frage in der Tabelle. Die Zeile wird markiert und die Buttons "Bearbeiten" und "Löschen" werden aktiv.
+Szene 4: Löschen. Der Benutzer klickt auf "Löschen". Eine Bestätigungsdialogbox erscheint: "Möchten Sie die Frage '...' wirklich löschen?". Der Benutzer klickt "Ja". Die Frage verschwindet aus der Tabelle in der GUI und wird aus der quiz_questions.dat entfernt.
+
+
+
+
+
+
+Storyboard 3: ModularQuizPlay (Quiz spielen)
+Szene 1: Startbildschirm. Der Benutzer öffnet den Tab. Er sieht:
+Ein Dropdown-Menü "Thema auswählen".
+Einen großen "Quiz starten"-Button.
+Szene 2: Quiz läuft. Der Benutzer wählt ein Thema und klickt "Quiz starten". Die Ansicht ändert sich:
+Oben wird der Fragentext angezeigt ("Frage 1 von 10").
+Darunter sind die Antwortoptionen als Radio-Buttons.
+Unten ist ein "Antwort bestätigen"-Button.
+Szene 3: Antwort geben. Der Benutzer wählt eine Antwort und klickt "Antwort bestätigen".
+Der Button wird deaktiviert.
+Die vom Benutzer gewählte Antwort wird markiert (z.B. mit einem blauen Rahmen).
+Die korrekte Antwort wird grün hinterlegt. War die Wahl des Benutzers falsch, wird sie rot hinterlegt.
+Der Button ändert seinen Text zu "Nächste Frage".
+Szene 4: Quiz-Ende. Nachdem die letzte Frage beantwortet wurde, erscheint eine Zusammenfassung:
+"Quiz beendet!"
+"Ergebnis: 8 von 10 Fragen richtig (80%)"
+Ein Button "Zurück zur Auswahl".
+Storyboard 4: Statistics (Statistiken)
+Szene 1: Übersicht. Der Benutzer öffnet den Tab. Das Panel ist in drei Bereiche aufgeteilt:
+Links oben (Gesamtstatistik): Ein Textbereich zeigt: "Gesamte Erfolgsquote: 75%", "Gespielte Fragen: 250", "Richtige Antworten: 188".
+
+
+Storyboard 4: Statistics (Statistiken) - Fortsetzung
+Szene 1: Übersicht (Fortsetzung).
+Links unten (Karteikarten-System): Eine Liste von "Boxen" oder "Leveln".
+"Stufe 1 (Neu/Falsch): 5 Fragen" - darunter eine Liste der Fragentitel.
+"Stufe 2 (Gelernt): 12 Fragen"
+... etc. pp.
+"Stufe 6 (Gemeistert): 30 Fragen"
+Ein separater Bereich: "Fragen, die geübt werden sollten: [Liste der Fragen aus Stufe 1 & 2]".
+Rechts (Themen-Statistiken): Eine Liste aller gespielten Themen.
+"Java Grundlagen - Versuche: 50, Erfolgsquote: 82%"
+"Design Patterns - Versuche: 25, Erfolgsquote: 65%"
+Szene 2: Interaktion & Aktualisierung.
+Der Benutzer klickt auf den "Aktualisieren"-Button. Die Zahlen und Listen werden neu geladen, falls im Hintergrund ein Quiz gespielt wurde.
+Der Benutzer klickt auf den "Statistiken zurücksetzen"-Button. Eine Bestätigungsdialogbox erscheint. Nach Bestätigung werden alle Zähler auf 0 gesetzt und die Karteikarten-Level zurückgesetzt. Die Anzeige wird geleert.
+Szene 3: Einstellungen.
+Der Benutzer klickt auf den "⚙️ Einstellungen"-Button.
+Ein Dialogfenster öffnet sich. Hier könnten Optionen sein wie:
+"Schwellenwert für 'Fragen, die geübt werden sollten' (Standard: Stufe <= 2)"
+"Anzahl der Stufen im Karteikartensystem (Standard: 6)"
+"Datenexport/-import der Statistikdaten"
