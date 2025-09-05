@@ -343,8 +343,9 @@ Bei Fragen, Ideen oder Feedback kannst du dich gerne melden:
   ```java
   // wenn es zu viel war..
   System.out.println("Hello Security!");
-</details>
 ```
+</details>
+
 
 
 # For English User
@@ -700,6 +701,7 @@ For questions, ideas, or feedback, feel free to contact:
 
 ---
 </details>
+
 
 
 
