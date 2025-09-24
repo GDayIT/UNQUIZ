@@ -152,7 +152,7 @@ UNQUIZ/
 │   │   └── Statistics.java
 │   │
 │   └── module-info.java
-├── bin/ (vom Tracking ausgeschlossen(Daher im .gitignore))
+├── X bin/ (vom Tracking ausgeschlossen(Daher im .gitignore)) X
 ├── .classpath/
 ├── .gitignore/
 ├── .project / .settings/
@@ -701,6 +701,7 @@ For questions, ideas, or feedback, feel free to contact:
 
 ---
 </details>
+
 
 
 
